@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Interim telemetry installer scripts (M3.1)
+- **Two scripts, not one cross-platform Node CLI.** `.ps1` for Windows, `.sh` for macOS/Linux. Each is small, no dependencies, and exercises the platform-native mechanism users expect (PowerShell User-scope env vars vs. shell rc files). Bundled `npx codeling install` will eventually wrap these, but the scripts stand alone for early-stage installs.
+- **POSIX writes a marked block, not loose lines.** `# >>> codeling-telemetry >>>` / `# <<< codeling-telemetry <<<` markers around the exports. Uninstall is a single `sed` deletion against the marker pair — surgical, never clobbers user edits to other rc lines. Same convention will apply to the future Stop-hook installer that writes into `~/.claude/settings.json`.
+- **`sed -i.codeling.bak`** rather than bare `-i`. macOS BSD sed treats the next argument as the backup extension when `-i` has no value; specifying an explicit extension makes the same command portable to GNU sed too. Backup is removed immediately.
+- **Conflict detection (Windows only) on `OTEL_EXPORTER_OTLP_ENDPOINT`.** If a user already has it pointed elsewhere (their own observability stack), we warn and bail unless `-Force`. POSIX equivalent: if you pass a non-default `ENDPOINT=...`, the block is written with that value — no implicit clobber because the rc-block approach respects whatever's already there until the script writes its own block.
+
 ### 2026-05-10 — Multi-species scaffolding (M2 partial)
 - **Pet rename uses an event, not the broadcast channel, for the tray tooltip.** `pet:renamed` on the in-process emitter; tray subscribes and calls `tray.setToolTip()`. Renderer-broadcast `codeling:update` already fires for the panel refresh — keeping tray-tooltip plumbing on the main-process emitter avoids reading the DB on every renderer-update tick (most don't change the name).
 - **Per-species `TRAY_HEAD_FRACTION` is a small flat record, intentionally not a per-stage thing.** Stage rarely changes the silhouette enough to warrant per-stage tuning; if it does (e.g., wizard stage 3 grows wings), introduce a per-(species, stage) map then. Premature for now — three flat values cover the planned roster.
@@ -144,10 +150,9 @@ Roughly ordered by impact for the next iteration.
 ### Onboarding
 - **`npx codeling install` flow** — the north-star install. Should:
   - Install/launch the app
-  - Set OTEL env vars persistently (Windows: `[Environment]::SetEnvironmentVariable(..., "User")`; macOS/Linux: marked block in `~/.zshrc` or `~/.bashrc`)
+  - Set OTEL env vars persistently (Windows: `[Environment]::SetEnvironmentVariable(..., "User")`; macOS/Linux: marked block in `~/.zshrc` or `~/.bashrc`) — *interim scripts shipped, see decision below*
   - Optionally install Stop hook to `~/.claude/settings.json`
   - Register auto-launch on login
-- **Until then**: ship a `scripts/install-telemetry.{ps1,sh}` that just handles the env-var step. Documented as a temporary workaround.
 
 ### Game loop
 - **Achievements / streaks** — daily streak, lifetime totals milestones

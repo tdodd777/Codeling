@@ -71,13 +71,13 @@ These need real money + accounts and can't be set up programmatically.
 
 ## OTEL / install flow validation (M3)
 
-The `npx codeling install` flow can be implemented by Claude, but each path needs a real-machine smoke test:
+The interim env-var installer scripts are in place at `scripts/install-telemetry.{ps1,sh}`. Each platform path needs a real-machine smoke test before it's trusted in the bundled `npx codeling install` flow:
 
-- [ ] **Windows**: confirm `[Environment]::SetEnvironmentVariable(..., "User")` persists across new PowerShell sessions and gets picked up by Claude Code without a reboot.
-- [ ] **macOS**: confirm marked-block insert into `~/.zshrc` survives restart and that Terminal/iTerm pick up the env vars.
-- [ ] **Linux**: same, against `~/.bashrc`.
-- [ ] **Conflict detection**: test against a machine that already has `OTEL_EXPORTER_OTLP_ENDPOINT` set — confirm the prompt flow lands.
-- [ ] **Stop hook installer**: confirm the marked block written to `~/.claude/settings.json` round-trips correctly when the user already has a `hooks.Stop` array.
+- [ ] **Windows** — run `.\scripts\install-telemetry.ps1 install` in PowerShell. Open a brand-new shell (or VS Code window) → confirm `$env:OTEL_EXPORTER_OTLP_ENDPOINT` is `http://127.0.0.1:4318` and Claude Code starts feeding the receiver. Run `uninstall` → confirm vars come back unset.
+- [ ] **macOS** (zsh) — run `./scripts/install-telemetry.sh install`. Open a new Terminal/iTerm tab → `printenv | grep -E 'OTEL|CLAUDE'` should show all six vars. Run `uninstall` → block is gone from `~/.zshrc`. Confirm only the marked block was touched (other rc edits intact).
+- [ ] **Linux** (bash) — same drill against `~/.bashrc`.
+- [ ] **Conflict detection** — set `OTEL_EXPORTER_OTLP_ENDPOINT` to a non-Codeling URL first, then run `install`. Confirm: warning lands, no overwrite. Re-run with `-Force` (Windows) or matching `ENDPOINT=...` arg (POSIX) → confirm overwrite proceeds.
+- [ ] **Stop hook installer** (not yet implemented) — confirm the marked block written to `~/.claude/settings.json` round-trips correctly when the user already has a `hooks.Stop` array.
 
 ---
 

@@ -112,7 +112,7 @@ Code-only items shipped; the rest is gated on art landing in `assets/sprites/`.
 
 This is the make-or-break adoption flow. Build it once the game is fun enough to be worth installing.
 
-- [ ] Telemetry env-var installer (interim): `scripts/install-telemetry.{ps1,sh}` with install/uninstall/status modes — set per-user OTEL env vars. Documented as a stopgap until the bundled installer lands.
+- [x] Telemetry env-var installer (interim): `scripts/install-telemetry.{ps1,sh}` with install/uninstall/status modes — sets per-User OTEL env vars (Windows: `[Environment]::SetEnvironmentVariable(..., "User")`; POSIX: marked block in `~/.zshrc` / `~/.bashrc`). Conflict detection on existing `OTEL_EXPORTER_OTLP_ENDPOINT` (warn unless `-Force`/matching ENDPOINT). README updated; real-machine smoke tests tracked in HUMAN.md.
 - [ ] Stop hook installer: writes a marked block into `~/.claude/settings.json` that POSTs each Stop event to a Codeling endpoint; uninstaller removes the block. Endpoint adds a supplementary message tally so we catch turns the OTEL exporter dropped.
 - [ ] Auto-launch on login: Electron's `app.setLoginItemSettings` on macOS, registry write on Windows
 - [ ] Bundle everything into a single `npx codeling install`:

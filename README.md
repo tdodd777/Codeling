@@ -23,18 +23,43 @@ The app launches in the tray. Open the panel — you'll see Home / Shop / Stats 
 
 ### Point Claude Code at the receiver
 
-Set these env vars (persistently, at user scope) so every Claude Code session feeds the receiver:
+Run the installer for your platform — it sets the User-scope env vars so every Claude Code session feeds the receiver:
 
 ```powershell
-[Environment]::SetEnvironmentVariable("CLAUDE_CODE_ENABLE_TELEMETRY", "1", "User")
-[Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
-[Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf", "User")
-[Environment]::SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp", "User")
-[Environment]::SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "otlp", "User")
-[Environment]::SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "10000", "User")
+# Windows (PowerShell)
+.\scripts\install-telemetry.ps1 install
+
+# Inspect / undo
+.\scripts\install-telemetry.ps1 status
+.\scripts\install-telemetry.ps1 uninstall
 ```
 
-Restart any open shells or VS Code afterwards. Eventually this gets folded into `npx codeling install`.
+```bash
+# macOS / Linux
+./scripts/install-telemetry.sh install
+
+# Inspect / undo
+./scripts/install-telemetry.sh status
+./scripts/install-telemetry.sh uninstall
+```
+
+Restart any open shells, VS Code, or terminals after install — env vars only propagate to newly-launched processes. The Windows script writes per-User env vars; the POSIX script writes a marked block to `~/.zshrc` (zsh) or `~/.bashrc` (bash) so uninstall stays surgical.
+
+Eventually all of this gets folded into `npx codeling install` along with auto-launch + Stop-hook installation.
+
+<details>
+<summary>Manual env vars (if you'd rather set them yourself)</summary>
+
+```
+CLAUDE_CODE_ENABLE_TELEMETRY=1
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_METRICS_EXPORTER=otlp
+OTEL_LOGS_EXPORTER=otlp
+OTEL_METRIC_EXPORT_INTERVAL=10000
+```
+
+</details>
 
 ## Project layout
 
