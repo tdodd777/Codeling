@@ -101,6 +101,13 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Achievements (M5 partial)
+- **State-derived, not event-derived.** Every achievement has a `check(snapshot)` predicate that re-evaluates against the current totals. No "first message" event hook, no streak counter columns — just `SUM(message_count) FROM sessions >= 1`. Means resetSave clears them naturally; means new defs added later auto-evaluate against the existing save without backfill code.
+- **One central evaluator, called from three sites.** `evaluateAchievements()` runs after applyEconomy (covers level/evolution/messages/cost), after performSpin (cosmetic-from-wheel), and after performPurchase (first-cosmetic, first-upgrade). Each call site is at the *boundary* of a state mutation, after the txn commits so listeners can't see partial state.
+- **Boot-time silent backfill** prevents existing-save notification floods. First call at `bootstrap()` runs with `silent=true` — inserts every newly-eligible row but suppresses event emission. Future runtime evals emit normally. Pattern reusable for any future "added achievements/quests in v X" content drop.
+- **Tier (bronze/silver/gold) drives both the OS notification body and the Stats UI accent.** Same approach as spin tiers — one categorical attribute, multiple presentation surfaces.
+- **Reset wipes achievements.** Otherwise the player can't re-earn them after a save reset, which defeats the point. Reset is the only deletion path.
+
 ### 2026-05-10 — Settings panel (M5 partial)
 - **Reset save is `DELETE * FROM <table> + seedDefaults` inside a single txn.** Extracted `seedDefaults` from `client.ts`'s init path so re-seeding doesn't duplicate logic. Atomic — if any DELETE throws, the user's save is intact. After-effects (`pet:reset` + `pet:renamed` events) fire *outside* the txn so tray refresh and tooltip update don't run while holding the SQLite write lock.
 - **Spin threshold range constants live in `shared/types.ts`.** Same pattern as `PET_NAME_MAX_LENGTH` — single source for both `<input min/max>` validation in the renderer and the repo's range-check. Renderer keeps its own draft state so user edits don't lose focus while typing; commits on blur or Enter.

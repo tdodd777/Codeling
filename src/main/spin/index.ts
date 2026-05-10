@@ -1,3 +1,4 @@
+import { evaluateAchievements } from '../achievements';
 import { getDb } from '../db/client';
 import { RULES } from '../economy';
 import { CONSOLATION_BITS, drawReward, type Reward, type Tier } from './rewards';
@@ -93,6 +94,11 @@ export function performSpin(rng?: () => number): SpinResult | SpinError {
     };
   });
   tx();
+
+  // Cosmetic-from-wheel and (future) spin-count achievements may flip after a
+  // successful spin. Eval outside the txn — listener side-effects shouldn't run
+  // with the SQLite write-lock held.
+  if (!('error' in outcome)) evaluateAchievements();
 
   return outcome;
 }

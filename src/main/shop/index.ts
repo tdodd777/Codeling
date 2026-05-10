@@ -1,3 +1,4 @@
+import { evaluateAchievements } from '../achievements';
 import { getDb } from '../db/client';
 import { findShopItem } from './catalog';
 
@@ -56,6 +57,9 @@ export function performPurchase(itemId: string): PurchaseResponse {
     };
   });
   tx();
+
+  // First-cosmetic / first-upgrade / etc. flip on purchase. Eval outside the txn.
+  if ('ok' in outcome) evaluateAchievements();
 
   return outcome;
 }

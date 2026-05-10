@@ -1,4 +1,5 @@
-import { PET_NAME_MAX_LENGTH, SPIN_THRESHOLD_MAX, SPIN_THRESHOLD_MIN, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, SPIN_THRESHOLD_MAX, SPIN_THRESHOLD_MIN, type AchievementView, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
+import { ACHIEVEMENTS } from '../achievements';
 import type { SessionField, SessionOp } from '../otel/aggregator';
 import { COSMETICS } from '../spin/rewards';
 import { getDb, seedDefaults } from './client';
@@ -57,6 +58,7 @@ export function resetSave(): void {
   const db = getDb();
   const tx = db.transaction(() => {
     db.exec(`DELETE FROM otel_events`);
+    db.exec(`DELETE FROM achievements`);
     db.exec(`DELETE FROM unlocks`);
     db.exec(`DELETE FROM sessions`);
     db.exec(`DELETE FROM spin_state`);
@@ -145,6 +147,26 @@ export function getUnlocks(): UnlockedItem[] {
       equipped: r.equipped !== 0,
       label: def?.label ?? r.item_id,
       tier: def?.tier ?? 'common',
+    };
+  });
+}
+
+export function getAchievementsView(): AchievementView[] {
+  const rows = getDb()
+    .prepare<[], { id: string; earned_at: number }>(
+      `SELECT id, earned_at FROM achievements`,
+    )
+    .all();
+  const earnedMap = new Map(rows.map((r) => [r.id, r.earned_at]));
+  return ACHIEVEMENTS.map((def) => {
+    const earnedAt = earnedMap.get(def.id);
+    return {
+      id: def.id,
+      label: def.label,
+      description: def.description,
+      tier: def.tier,
+      earned: earnedAt !== undefined,
+      earnedAt,
     };
   });
 }

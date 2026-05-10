@@ -16,6 +16,7 @@ const api: CodelingApi = {
   setSpinThreshold: (n) => ipcRenderer.invoke('codeling:setSpinThreshold', n),
   resetSave: () => ipcRenderer.invoke('codeling:resetSave'),
   getReceiverInfo: () => ipcRenderer.invoke('codeling:getReceiverInfo'),
+  getAchievements: () => ipcRenderer.invoke('codeling:getAchievements'),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

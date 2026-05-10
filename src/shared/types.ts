@@ -120,6 +120,17 @@ export interface ReceiverInfo {
   grpc: string;
 }
 
+export type AchievementTier = 'bronze' | 'silver' | 'gold';
+
+export interface AchievementView {
+  id: string;
+  label: string;
+  description: string;
+  tier: AchievementTier;
+  earned: boolean;
+  earnedAt?: number;
+}
+
 export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
@@ -133,6 +144,7 @@ export interface CodelingApi {
   setSpinThreshold(n: number): Promise<SpinThresholdResponse>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
+  getAchievements(): Promise<AchievementView[]>;
   onUpdate(cb: () => void): () => void;
 }
 

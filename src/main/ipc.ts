@@ -10,7 +10,7 @@ import {
   type SpinResponse,
   type SpinThresholdResponse,
 } from '@shared/types';
-import { getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
+import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
 import { events } from './events';
 import { notifyUpdate } from './notify';
 import { SHOP_ITEMS } from './shop/catalog';
@@ -75,6 +75,7 @@ export function registerIpcHandlers(): void {
     http: 'http://127.0.0.1:4318',
     grpc: 'http://127.0.0.1:4317',
   }));
+  ipcMain.handle('codeling:getAchievements', () => getAchievementsView());
   ipcMain.handle('codeling:renamePet', (_, name: string): RenameResponse => {
     if (typeof name !== 'string') return { error: 'empty-name' };
     try {

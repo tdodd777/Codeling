@@ -1,4 +1,5 @@
 import type { SignalType, Transport } from '@shared/types';
+import { evaluateAchievements } from '../achievements';
 import { applySessionOps, recordOtelEvent } from '../db/repos';
 import { applyEconomy } from '../economy';
 import { notifyUpdate } from '../notify';
@@ -23,6 +24,9 @@ export function ingest(signalType: SignalType, transport: Transport, payload: un
 
   const totals = sumOps(ops);
   const econ = applyEconomy({ messages: totals.message_count, outputTokens: totals.output_tokens });
+  // Achievements are state-derived; one eval per ingest tick covers level,
+  // evolution, message-count, and cost milestones in one pass.
+  if (econ.changed || ops.length > 0) evaluateAchievements();
 
   const summary = summarize(signalType, payload);
   const opsSummary = formatTotals(totals);

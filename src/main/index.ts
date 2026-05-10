@@ -1,8 +1,9 @@
-import { app, nativeImage, type NativeImage } from 'electron';
+import { app, nativeImage, Notification, type NativeImage } from 'electron';
 import { menubar } from 'menubar';
 import path from 'node:path';
 import fs from 'node:fs';
 import type { Species } from '@shared/types';
+import { evaluateAchievements } from './achievements';
 import { getDb, closeDb } from './db/client';
 import { getPet } from './db/repos';
 import { events } from './events';
@@ -163,6 +164,10 @@ async function bootstrap() {
 
   // Initialize SQLite (creates DB and seeds on first boot).
   getDb();
+  // Backfill any achievements an existing save already qualifies for, silently
+  // — without this an upgraded user would get a burst of OS notifications on
+  // their next ingest tick for everything they've already earned over time.
+  evaluateAchievements(true);
   registerIpcHandlers();
 
   // Start both OTLP receivers in parallel; failures shouldn't block the UI.
@@ -263,6 +268,17 @@ async function bootstrap() {
   events.on('pet:renamed', (e) => {
     if (mb.tray && !mb.tray.isDestroyed()) {
       mb.tray.setToolTip(`Codeling — ${e.name}`);
+    }
+  });
+
+  events.on('achievement:earned', (a) => {
+    console.log(`[achievement] earned ${a.id}: ${a.label}`);
+    if (Notification.isSupported()) {
+      new Notification({
+        title: `Achievement: ${a.label}`,
+        body: a.description,
+        silent: false,
+      }).show();
     }
   });
 

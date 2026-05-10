@@ -44,3 +44,8 @@ CREATE TABLE IF NOT EXISTS spin_state (
   messages_since_last_spin INTEGER NOT NULL DEFAULT 0,
   spin_threshold INTEGER NOT NULL DEFAULT 50
 );
+
+CREATE TABLE IF NOT EXISTS achievements (
+  id TEXT PRIMARY KEY,
+  earned_at INTEGER NOT NULL
+);

@@ -143,9 +143,15 @@ This is the make-or-break adoption flow. Build it once the game is fun enough to
 - [x] Settings panel (4th tab):
   - Spin threshold inline numeric input (`SPIN_THRESHOLD_MIN`–`SPIN_THRESHOLD_MAX` range; commit on blur/Enter; per-row error)
   - Receiver section: read-only HTTP/gRPC endpoints + pointer to install scripts
-  - Danger zone: Reset save (atomic txn wipes pet/sessions/unlocks/spin_state/otel_events, re-seeds defaults, fires `pet:reset` + `pet:renamed` so tray refreshes)
+  - Danger zone: Reset save (atomic txn wipes pet/sessions/unlocks/spin_state/otel_events/achievements, re-seeds defaults, fires `pet:reset` + `pet:renamed` so tray refreshes)
   - Deferred: XP/bit rate edits (need RULES → settings-table refactor), telemetry off switch
-- [ ] Achievements / streaks: daily streak, milestone notifications via tray balloon
+- [x] Achievements (state-derived milestones):
+  - `src/main/achievements.ts` — 13 defs across engagement / progression / evolution / collection / cost tiers; each `check`s a Snapshot built from sessions + pet + unlocks
+  - `achievements (id, earned_at)` table; `evaluateAchievements()` is called after applyEconomy / performSpin / performPurchase
+  - Boot-time silent backfill so existing saves don't flood notifications on first ingest tick
+  - OS notification per newly-earned achievement (tray balloon via `Notification`)
+  - Stats tab renders earned + locked groups with tier-keyed left-border accent (bronze/silver/gold)
+- [ ] Daily streak: longer-term tracking (deferred — needs date-bucketing logic + UTC handling)
 - [ ] Export / import save (JSON dump of pet + unlocks + sessions, for moving between machines)
 - [ ] Multi-machine sync (only if there's user demand — implies an account/server)
 - [ ] Daily summary notification ("Yesterday: 12 sessions, 47 messages, 3 levels gained")

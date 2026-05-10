@@ -15,10 +15,19 @@ export interface PetRenamedEvent {
   name: string;
 }
 
+export interface AchievementEarnedEvent {
+  id: string;
+  label: string;
+  description: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  earnedAt: number;
+}
+
 interface EventMap {
   'pet:evolved': [PetEvolvedEvent];
   'pet:renamed': [PetRenamedEvent];
   'pet:reset': [];
+  'achievement:earned': [AchievementEarnedEvent];
 }
 
 class TypedEmitter extends EventEmitter {
