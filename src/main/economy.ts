@@ -1,4 +1,7 @@
+import type { Species } from '@shared/types';
 import { getDb } from './db/client';
+import { events } from './events';
+import { stageForOutputTokens } from './evolution';
 
 // Tunables — central so they're easy to rebalance later from a single place.
 export const RULES = {
@@ -19,13 +22,17 @@ export interface EconomyResult {
   bitsGained: number;
   levelsGained: number;
   spinsGranted: number;
+  evolved: boolean;
+  newStage: number;
   changed: boolean;
 }
 
 interface PetRow {
+  species: string;
   level: number;
   xp: number;
   bits: number;
+  evolution_stage: number;
 }
 
 interface SpinRow {
@@ -40,6 +47,8 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
     bitsGained: 0,
     levelsGained: 0,
     spinsGranted: 0,
+    evolved: false,
+    newStage: 0,
     changed: false,
   };
   if (d.messages <= 0 && d.outputTokens <= 0) return result;
@@ -54,10 +63,13 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
   if (xpGained === 0 && bitsGained === 0 && d.messages === 0) return result;
 
   const db = getDb();
+  let evolution: { species: Species; from: number; to: number } | null = null;
   const tx = db.transaction(() => {
     // Pet: apply XP/bits, then unroll level-ups carrying XP forward.
     const pet = db
-      .prepare<[], PetRow>(`SELECT level, xp, bits FROM pet WHERE id = 1`)
+      .prepare<[], PetRow>(
+        `SELECT species, level, xp, bits, evolution_stage FROM pet WHERE id = 1`,
+      )
       .get();
     if (!pet) throw new Error('pet row missing');
 
@@ -72,10 +84,27 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
     }
     const bits = pet.bits + bitsGained;
 
-    db.prepare<[number, number, number]>(
-      `UPDATE pet SET level = ?, xp = ?, bits = ? WHERE id = 1`,
-    ).run(level, xp, bits);
+    // Evolution: derive from cumulative lifetime output tokens (sum across all
+    // sessions). Session ops have already been committed by the time this runs
+    // — see ingest.ts ordering. Stage only ever increases.
+    const totals = db
+      .prepare<[], { total: number | null }>(
+        `SELECT COALESCE(SUM(output_tokens), 0) AS total FROM sessions`,
+      )
+      .get();
+    const cumulativeOutput = totals?.total ?? 0;
+    const targetStage = stageForOutputTokens(pet.species as Species, cumulativeOutput);
+    const evolutionStage = Math.max(pet.evolution_stage, targetStage);
 
+    db.prepare<[number, number, number, number]>(
+      `UPDATE pet SET level = ?, xp = ?, bits = ?, evolution_stage = ? WHERE id = 1`,
+    ).run(level, xp, bits, evolutionStage);
+
+    if (evolutionStage > pet.evolution_stage) {
+      evolution = { species: pet.species as Species, from: pet.evolution_stage, to: evolutionStage };
+      result.evolved = true;
+    }
+    result.newStage = evolutionStage;
     result.xpGained = xpGained;
     result.bitsGained = bitsGained;
     result.levelsGained = levelsGained;
@@ -107,6 +136,13 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
     result.changed = true;
   });
   tx();
+
+  // Emit outside the txn — listeners (tray refresh, future notifications) shouldn't
+  // run with the SQLite write-lock held.
+  if (evolution) {
+    const e = evolution as { species: Species; from: number; to: number };
+    events.emit('pet:evolved', { species: e.species, fromStage: e.from, toStage: e.to });
+  }
 
   return result;
 }

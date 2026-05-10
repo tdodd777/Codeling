@@ -9,7 +9,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('codeling:getPet', () => getPet());
   ipcMain.handle('codeling:getSpinState', () => getSpinState());
   ipcMain.handle('codeling:getStats', () => getLifetimeStats());
-  ipcMain.handle('codeling:getSprites', (_, species: Species) => buildSpriteManifest(species));
+  ipcMain.handle('codeling:getSprites', (_, species: Species, stage?: number) =>
+    buildSpriteManifest(species, stage ?? 0),
+  );
   ipcMain.handle('codeling:getUnlocks', () => getUnlocks());
   ipcMain.handle('codeling:spin', (): SpinResponse => {
     const result = performSpin();

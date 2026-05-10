@@ -30,7 +30,8 @@ export function ingest(signalType: SignalType, transport: Transport, payload: un
     econ.changed
       ? ` | +xp=${econ.xpGained} +bits=${econ.bitsGained}` +
         (econ.levelsGained ? ` +levels=${econ.levelsGained}` : '') +
-        (econ.spinsGranted ? ` +spins=${econ.spinsGranted}` : '')
+        (econ.spinsGranted ? ` +spins=${econ.spinsGranted}` : '') +
+        (econ.evolved ? ` evolved=stage_${econ.newStage}` : '')
       : '';
   console.log(`[otel:${transport}] ${signalType} ${summary}${opsSummary}${econSummary}`);
 

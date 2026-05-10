@@ -80,7 +80,7 @@ export function Home() {
   return (
     <div className="home">
       <div className="pet-stage">
-        <PetSprite species={pet.species} size={128} />
+        <PetSprite species={pet.species} stage={pet.evolutionStage} size={128} />
       </div>
 
       <div className="pet-meta">

@@ -52,6 +52,14 @@ Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
 - [x] `getUnlocks()` repo + `codeling:getUnlocks` IPC; spin handler calls `notifyUpdate()` so Home/Shop refresh
 - [x] Home tab wires the button; tier-styled reveal toast (backdrop, click-or-3.5s dismiss); Shop "Owned" section renders cosmetics with rarity accent
 
+### M1.2 — Evolution thresholds
+- [x] Per-species `EVOLUTIONS: Record<Species, number[]>` cumulative output-token thresholds + `stageForOutputTokens` helper (`src/main/evolution.ts`)
+- [x] `applyEconomy` queries `SUM(output_tokens)` across sessions, bumps `pet.evolution_stage` (monotonic), surfaces `evolved`/`newStage` in result
+- [x] Sprite layout: `assets/sprites/<species>/stage_<N>/` overrides root when present (graceful fallback for stages without art)
+- [x] `<PetSprite>` accepts `stage`; Home passes `pet.evolutionStage`; `getSprites` IPC takes optional stage
+- [x] Main-process EventEmitter (`src/main/events.ts`) emits `pet:evolved`; index.ts subscribes and rebuilds tray frames (and static icon) for the new stage
+- [x] ingest.ts logs `evolved=stage_N` alongside econ summary
+
 ---
 
 ## In progress
@@ -63,14 +71,6 @@ _Nothing currently mid-flight._
 ## M1 — Game loop alive (next up)
 
 Goal: every visible UI element does something real. After M1, the app is a complete (if minimal) game.
-
-### M1.2 — Evolution thresholds
-- [ ] Per-species evolution table (token thresholds → `evolution_stage`): `EVOLUTIONS: Record<Species, number[]>`
-- [ ] In `applyEconomy`: after token writes, check if cumulative-tokens-for-pet crosses the next threshold; bump `evolution_stage`
-- [ ] Sprite manifest already supports per-stage subdirs in concept — formalize layout: `assets/sprites/<species>/stage_<N>/...`
-- [ ] `<PetSprite>` reads `pet.evolution_stage` and loads the right sprite set
-- [ ] Tray icon refresh on evolution (use `codeling:update` to rebuild tray frames)
-- **Acceptance**: Hit a configured token threshold → pet sprite changes to next stage → tray follows → console logs evolution event
 
 ### M1.3 — Cost tracking
 - [ ] Add `cost_usd REAL DEFAULT 0` column to `sessions` (migration in `client.ts`)

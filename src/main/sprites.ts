@@ -33,8 +33,30 @@ function spritesRoot(): string {
     : path.join(app.getAppPath(), 'assets', 'sprites');
 }
 
-function urlFor(species: Species, ...rest: string[]): string {
-  return ['./sprites', species, ...rest].join('/');
+// Resolve the sprite directory + URL prefix for a species at a given evolution
+// stage. If `stage_<N>/` exists under the species, use it; otherwise fall back
+// to the species root so a freshly-evolved pet without per-stage art still
+// renders the previous form rather than going invisible.
+export function speciesStageRoot(
+  species: Species,
+  stage: number,
+): { dir: string; urlSegments: string[] } {
+  const base = path.join(spritesRoot(), species);
+  if (stage > 0) {
+    const stageDir = path.join(base, `stage_${stage}`);
+    try {
+      if (fs.statSync(stageDir).isDirectory()) {
+        return { dir: stageDir, urlSegments: ['./sprites', species, `stage_${stage}`] };
+      }
+    } catch {
+      // stage dir missing — fall through to root
+    }
+  }
+  return { dir: base, urlSegments: ['./sprites', species] };
+}
+
+function urlFor(urlSegments: string[], ...rest: string[]): string {
+  return [...urlSegments, ...rest].join('/');
 }
 
 function listIfDir(p: string): string[] {
@@ -50,15 +72,15 @@ function frameIndex(file: string): number {
   return m && m[1] ? parseInt(m[1], 10) : -1;
 }
 
-export function buildSpriteManifest(species: Species): SpriteManifest {
-  const root = path.join(spritesRoot(), species);
+export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest {
+  const { dir: root, urlSegments } = speciesStageRoot(species, stage);
   const manifest: SpriteManifest = {
-    static: urlFor(species, 'rotations', 'south.png'),
+    static: urlFor(urlSegments, 'rotations', 'south.png'),
     animations: {},
   };
 
   if (!fs.existsSync(root)) {
-    console.warn(`[sprites] no sprite directory for ${species} at ${root}`);
+    console.warn(`[sprites] no sprite directory for ${species} stage ${stage} at ${root}`);
     return manifest;
   }
 
@@ -69,12 +91,12 @@ export function buildSpriteManifest(species: Species): SpriteManifest {
     const direction = DIRECTION_ALIASES[base];
     if (!direction) continue;
     if (direction === 'south') {
-      manifest.static = urlFor(species, 'rotations', file);
+      manifest.static = urlFor(urlSegments, 'rotations', file);
     }
     // Expose rotations as a 1-frame "static" pseudo-animation so renderers can
     // request a still pose by direction without special-casing.
     const anim = (manifest.animations.static ??= {});
-    anim[direction] = [urlFor(species, 'rotations', file)];
+    anim[direction] = [urlFor(urlSegments, 'rotations', file)];
   }
 
   // 2. animations/<name-hash>/<direction>/frame_NNN.png — PixelLab format.
@@ -91,7 +113,7 @@ export function buildSpriteManifest(species: Species): SpriteManifest {
       const frames = listIfDir(dirPath)
         .filter((f) => f.toLowerCase().endsWith('.png'))
         .sort((a, b) => frameIndex(a) - frameIndex(b))
-        .map((f) => urlFor(species, 'animations', animFolder, dirName, f));
+        .map((f) => urlFor(urlSegments, 'animations', animFolder, dirName, f));
       if (frames.length > 0) directions[direction] = frames;
     }
 
@@ -105,6 +127,7 @@ export function buildSpriteManifest(species: Species): SpriteManifest {
   // 3. Backwards-compat: flat layout (<animation>/<direction>_<frame>.png).
   for (const entry of listIfDir(root)) {
     if (entry === 'rotations' || entry === 'animations' || entry === 'metadata.json') continue;
+    if (/^stage_\d+$/.test(entry)) continue; // stage subdirs are scanned via their own buildSpriteManifest call
     const dir = path.join(root, entry);
     if (!fs.statSync(dir).isDirectory()) continue;
     const directions: Partial<Record<Direction, string[]>> = {};
@@ -114,7 +137,7 @@ export function buildSpriteManifest(species: Species): SpriteManifest {
       if (!m || !m[1]) continue;
       const direction = DIRECTION_ALIASES[m[1].toLowerCase()];
       if (!direction) continue;
-      (directions[direction] ??= []).push(urlFor(species, entry, file));
+      (directions[direction] ??= []).push(urlFor(urlSegments, entry, file));
     }
     for (const dir of Object.keys(directions) as Direction[]) {
       directions[dir]!.sort((a, b) => frameIndex(a) - frameIndex(b));
@@ -132,7 +155,7 @@ export function buildSpriteManifest(species: Species): SpriteManifest {
           .join(',')})`,
     )
     .join(' ');
-  console.log(`[sprites] ${species}: ${summary || '(only static fallback)'}`);
+  console.log(`[sprites] ${species} stage ${stage}: ${summary || '(only static fallback)'}`);
 
   return manifest;
 }

@@ -3,6 +3,7 @@ import type { Direction, Species, SpriteManifest } from '@shared/types';
 
 interface Props {
   species: Species;
+  stage?: number;           // evolution stage; defaults to 0
   size?: number;
   animation?: string;       // defaults to 'idle'
   direction?: Direction;    // defaults to 'south'
@@ -11,6 +12,7 @@ interface Props {
 
 export function PetSprite({
   species,
+  stage = 0,
   size = 96,
   animation = 'idle',
   direction = 'south',
@@ -21,8 +23,8 @@ export function PetSprite({
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
-    window.codeling.getSprites(species).then(setManifest).catch(console.error);
-  }, [species]);
+    window.codeling.getSprites(species, stage).then(setManifest).catch(console.error);
+  }, [species, stage]);
 
   const frames = manifest?.animations[animation]?.[direction] ?? null;
 

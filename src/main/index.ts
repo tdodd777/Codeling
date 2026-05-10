@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import type { Species } from '@shared/types';
 import { getDb, closeDb } from './db/client';
 import { getPet } from './db/repos';
+import { events } from './events';
 import { registerIpcHandlers } from './ipc';
 import { startHttpReceiver } from './otel/http-receiver';
 import { startGrpcReceiver } from './otel/grpc-receiver';
@@ -77,11 +78,25 @@ function processForTray(img: NativeImage): NativeImage {
   });
 }
 
+// Resolve the on-disk sprite root for a species at a given stage. Mirrors the
+// renderer-side `speciesStageRoot` (sprites.ts) — falls back to the species
+// root if the stage subdir doesn't exist, so a pet that just evolved still
+// renders the previous form rather than going blank.
+function spriteStageDir(species: Species, stage: number): string {
+  const base = path.join(assetsRoot(), 'sprites', species);
+  if (stage > 0) {
+    const stageDir = path.join(base, `stage_${stage}`);
+    if (fs.existsSync(stageDir) && fs.statSync(stageDir).isDirectory()) return stageDir;
+  }
+  return base;
+}
+
 function trayIcon(): NativeImage {
   // Prefer the current pet's south rotation so the tray reflects what's in the panel.
   try {
     const pet = getPet();
-    const speciesIcon = path.join(assetsRoot(), 'sprites', pet.species, 'rotations', 'south.png');
+    const root = spriteStageDir(pet.species, pet.evolutionStage);
+    const speciesIcon = path.join(root, 'rotations', 'south.png');
     if (fs.existsSync(speciesIcon)) {
       return processForTray(nativeImage.createFromPath(speciesIcon));
     }
@@ -97,8 +112,8 @@ function trayIcon(): NativeImage {
 
 // Pre-render every idle frame at boot so the animation loop is just an array swap,
 // not a disk read + decode + crop on each tick.
-function buildIdleTrayFrames(species: Species): NativeImage[] {
-  const animDir = path.join(assetsRoot(), 'sprites', species, 'animations');
+function buildIdleTrayFrames(species: Species, stage: number): NativeImage[] {
+  const animDir = path.join(spriteStageDir(species, stage), 'animations');
   if (!fs.existsSync(animDir)) return [];
   const idleFolder = fs
     .readdirSync(animDir)
@@ -175,15 +190,27 @@ async function bootstrap() {
 
   let trayTimer: NodeJS.Timeout | null = null;
   function startTrayAnimation() {
-    if (trayTimer) clearInterval(trayTimer);
-    let frames: NativeImage[] = [];
+    if (trayTimer) {
+      clearInterval(trayTimer);
+      trayTimer = null;
+    }
+    let species: Species;
+    let stage: number;
     try {
-      frames = buildIdleTrayFrames(getPet().species);
+      const pet = getPet();
+      species = pet.species;
+      stage = pet.evolutionStage;
     } catch {
       return;
     }
+    // Always refresh the static icon first so an evolution lands visibly even
+    // when the new stage has only a still rotation and no idle frames.
+    if (mb.tray && !mb.tray.isDestroyed()) {
+      mb.tray.setImage(trayIcon());
+    }
+    const frames = buildIdleTrayFrames(species, stage);
     if (frames.length <= 1) return; // no animation available — keep static icon
-    console.log(`[tray] animating ${frames.length} idle frames at ${TRAY_FPS} fps`);
+    console.log(`[tray] animating ${frames.length} idle frames at ${TRAY_FPS} fps (stage ${stage})`);
     let i = 0;
     trayTimer = setInterval(() => {
       if (!mb.tray || mb.tray.isDestroyed()) {
@@ -197,6 +224,11 @@ async function bootstrap() {
       i++;
     }, Math.round(1000 / TRAY_FPS));
   }
+
+  events.on('pet:evolved', (e) => {
+    console.log(`[tray] pet evolved ${e.species} stage_${e.fromStage} → stage_${e.toStage}; refreshing`);
+    startTrayAnimation();
+  });
 
   app.on('before-quit', () => {
     if (trayTimer) clearInterval(trayTimer);

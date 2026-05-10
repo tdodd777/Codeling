@@ -81,7 +81,7 @@ export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
   getStats(): Promise<LifetimeStats>;
-  getSprites(species: Species): Promise<SpriteManifest>;
+  getSprites(species: Species, stage?: number): Promise<SpriteManifest>;
   getUnlocks(): Promise<UnlockedItem[]>;
   spin(): Promise<SpinResponse>;
   onUpdate(cb: () => void): () => void;
