@@ -51,6 +51,20 @@ export function Home() {
     [],
   );
 
+  // Esc dismisses an open spin reveal toast. Conditional listener — no point
+  // attaching when the toast isn't shown, and avoids stealing Esc from inputs.
+  useEffect(() => {
+    if (!toast) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') dismissToast();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // dismissToast captures dismissRef; it's stable across renders (ref +
+    // setState only), so the eslint-deps warning is a false positive here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
+
   function showToast(result: SpinResult) {
     setToast(result);
     if (dismissRef.current !== null) window.clearTimeout(dismissRef.current);
