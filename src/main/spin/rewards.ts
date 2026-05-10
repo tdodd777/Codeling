@@ -44,10 +44,16 @@ export interface CosmeticDef {
 
 // Authoritative cosmetic registry — keyed by the value stored in unlocks.item_id.
 // The Shop's "owned" section resolves item_id → label/tier through this map.
+// Includes both wheel-rolled and shop-buyable cosmetics; the SHOP_ITEMS list in
+// shop/catalog.ts references entries here by id.
 export const COSMETICS: Record<string, CosmeticDef> = {
+  // wheel-rolled
   party_hat: { label: 'Party Hat',   tier: 'uncommon' },
   monocle:   { label: 'Monocle',     tier: 'rare' },
   crown:     { label: 'Royal Crown', tier: 'legendary' },
+  // shop-buyable
+  glasses:   { label: 'Glasses',     tier: 'common' },
+  witch_hat: { label: 'Witch Hat',   tier: 'uncommon' },
 };
 
 // Bits handed out when a cosmetic roll lands on something the pet already owns.

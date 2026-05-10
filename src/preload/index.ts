@@ -9,7 +9,9 @@ const api: CodelingApi = {
   getStats: () => ipcRenderer.invoke('codeling:getStats'),
   getSprites: (species, stage) => ipcRenderer.invoke('codeling:getSprites', species, stage ?? 0),
   getUnlocks: () => ipcRenderer.invoke('codeling:getUnlocks'),
+  getShopItems: () => ipcRenderer.invoke('codeling:getShopItems'),
   spin: () => ipcRenderer.invoke('codeling:spin'),
+  purchase: (itemId) => ipcRenderer.invoke('codeling:purchase', itemId),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

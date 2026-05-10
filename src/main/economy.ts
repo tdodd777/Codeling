@@ -56,7 +56,7 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
   const xpGained =
     d.messages * RULES.xpPerMessage +
     Math.floor(d.outputTokens / RULES.xpPerOutputTokens);
-  const bitsGained =
+  let bitsGained =
     d.messages * RULES.bitsPerMessage +
     Math.floor(d.outputTokens / RULES.bitsPerOutputTokens);
 
@@ -65,6 +65,14 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
   const db = getDb();
   let evolution: { species: Species; from: number; to: number } | null = null;
   const tx = db.transaction(() => {
+    // Permanent upgrades that scale earnings. Cheap query (one indexed lookup);
+    // run inside the txn so a purchase that lands mid-batch is consistent.
+    const has2xBits = !!db
+      .prepare<[], { item_id: string }>(
+        `SELECT item_id FROM unlocks WHERE category = 'upgrade' AND item_id = 'bit_multiplier_2x' LIMIT 1`,
+      )
+      .get();
+    if (has2xBits) bitsGained *= 2;
     // Pet: apply XP/bits, then unroll level-ups carrying XP forward.
     const pet = db
       .prepare<[], PetRow>(

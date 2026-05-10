@@ -78,13 +78,38 @@ export interface UnlockedItem {
   tier: SpinTier;
 }
 
+export type ShopItemKind = 'cosmetic' | 'upgrade';
+
+export interface ShopItemView {
+  id: string;
+  kind: ShopItemKind;
+  priceBits: number;
+  label: string;
+  description?: string;
+  tier: SpinTier;
+}
+
+export type PurchaseResponse =
+  | {
+      ok: true;
+      itemId: string;
+      category: ShopItemKind;
+      bitsRemaining: number;
+      pricePaid: number;
+    }
+  | { error: 'unknown-item' }
+  | { error: 'insufficient'; bits: number; price: number }
+  | { error: 'already-owned' };
+
 export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
   getStats(): Promise<LifetimeStats>;
   getSprites(species: Species, stage?: number): Promise<SpriteManifest>;
   getUnlocks(): Promise<UnlockedItem[]>;
+  getShopItems(): Promise<ShopItemView[]>;
   spin(): Promise<SpinResponse>;
+  purchase(itemId: string): Promise<PurchaseResponse>;
   onUpdate(cb: () => void): () => void;
 }
 

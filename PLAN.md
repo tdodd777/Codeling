@@ -66,6 +66,13 @@ Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
 - [x] `LifetimeStats.totalCostUsd` summed in `getLifetimeStats`; Stats tab renders a "Cost" row formatted via `Intl.NumberFormat('en-US', {style:'currency'})` (up to 4 decimals so sub-penny totals don't read as $0.00)
 - [x] ingest.ts log shows `+cost_usd=$X.XXXX` alongside other deltas
 
+### M1.4 — Minimum viable shop
+- [x] Shop catalog (`src/main/shop/catalog.ts`): 2 cosmetics (`glasses` 100 bits, `witch_hat` 250 bits) + 1 upgrade (`bit_multiplier_2x` 500 bits, permanent). Cosmetic shop ids reuse `unlocks.item_id` so dedupe with wheel rewards is automatic.
+- [x] `performPurchase` atomic txn (`src/main/shop/index.ts`) — checks bits, decrements, inserts unlock; distinct error codes: `unknown-item` / `insufficient` / `already-owned`
+- [x] IPC `codeling:purchase` + `codeling:getShopItems`; broadcasts `codeling:update` on success
+- [x] `applyEconomy` checks `unlocks` for `bit_multiplier_2x` inside its txn and doubles `bitsGained` if owned
+- [x] Shop tab redesigned: header with "N bits" balance, single per-tab list combining catalog items and owned-not-in-catalog (wheel rewards still appear). Inline buy button, disabled when broke or pending. Per-row success/error feedback with auto-dismiss.
+
 ---
 
 ## In progress
@@ -77,13 +84,6 @@ _Nothing currently mid-flight._
 ## M1 — Game loop alive (next up)
 
 Goal: every visible UI element does something real. After M1, the app is a complete (if minimal) game.
-
-### M1.4 — Minimum viable shop
-- [ ] Shop catalog (`src/main/shop/catalog.ts`): a handful of cosmetics + 1-2 upgrades with prices in bits
-- [ ] IPC `codeling:purchase(itemId)` — checks bits, decrements, inserts into `unlocks`
-- [ ] Shop tab renders catalog, marks owned, disables button when broke
-- [ ] First upgrade: `bit_multiplier_2x` — economy reads owned upgrades and applies to bits earnings
-- **Acceptance**: Buy item → bits decrease → item moves to "owned" → for upgrades, future earnings reflect the bonus
 
 ### M1.5 — Per-character pet-stage background
 - [ ] Sprite manifest exposes `background?: string` from `assets/sprites/<species>/background.png` if present

@@ -261,48 +261,126 @@ html, body, #root {
   padding: 32px 0;
 }
 
-.shop-section-header {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 8px;
+.shop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.owned-list {
+.shop-header .subtabs {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.shop-bits {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.shop-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.owned-item {
+.shop-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 10px 12px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-left-width: 3px;
   border-radius: 6px;
-  font-size: 13px;
 }
 
-.owned-item__tier {
+.shop-item__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-item__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.shop-item__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shop-item__tier {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted);
 }
 
-.owned-item--common      { border-left-color: #4a4868; }
-.owned-item--uncommon    { border-left-color: #6dc685; }
-.owned-item--rare        { border-left-color: #8caaee; }
-.owned-item--legendary   { border-left-color: #f0c75e; }
-.owned-item--legendary .owned-item__label { color: #f0c75e; }
+.shop-item__desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.shop-item__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.shop-item__buy {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shop-item__buy:disabled {
+  background: var(--accent-dim);
+  color: var(--muted);
+  cursor: default;
+}
+
+.shop-item__owned {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.shop-item__feedback {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.shop-item__feedback--success { color: #6dc685; }
+.shop-item__feedback--error   { color: #d68a8a; }
+
+.shop-item--common      { border-left-color: #4a4868; }
+.shop-item--uncommon    { border-left-color: #6dc685; }
+.shop-item--rare        { border-left-color: #8caaee; }
+.shop-item--legendary   { border-left-color: #f0c75e; }
+.shop-item--legendary .shop-item__label { color: #f0c75e; }
 
 /* --- Stats --- */
 
