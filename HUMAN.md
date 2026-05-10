@@ -23,9 +23,9 @@ Shop-buyable (also referenced in `src/main/shop/catalog.ts`):
 - [ ] **`glasses`** — common, 100 bits. Smart-looking spectacles
 - [ ] **`witch_hat`** — uncommon, 250 bits. Pointed wide-brim hat (distinct from wizard's existing pointy hat — pointed *and* wide-brimmed)
 
-**Convention (proposed, not yet implemented):** `assets/sprites/<species>/cosmetics/<cosmeticId>/<direction>.png`. Each is a same-canvas-size overlay aligned to the base sprite. South direction is the only one strictly required; renderer will fall back to south if other directions are missing.
+**Convention (wired up — drop a PNG and it composites):** `assets/sprites/<species>/cosmetics/<cosmeticId>/<direction>.png`. Each is a same-canvas-size overlay aligned to the base sprite. South direction is the only one strictly required; renderer falls back to south if other directions are missing. Per-stage overrides also work: drop into `stage_<N>/cosmetics/<cosmeticId>/...` and that beats the species-root version once the pet evolves.
 
-Cosmetic compositing isn't wired yet (deferred per `DIRECTION.md` → "Sprite layering for cosmetics"). The Shop already lists owned cosmetics as text — equip rendering lands later.
+The equip toggle, manifest scanning, and overlay rendering are all wired. Until you drop a PNG, the equip button toggles silently with no visual change — the renderer just doesn't have anything to composite. Drop a `south.png` and it appears immediately on next manifest fetch.
 
 ### Evolution stages (M1.2)
 

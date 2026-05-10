@@ -133,6 +133,36 @@ interface UnlockRow {
   equipped: number;
 }
 
+// Equip / unequip a cosmetic. Mutex per category — only one cosmetic active at
+// a time for now. When art arrives with explicit slots (head, eye, body),
+// extend this to mutex by slot rather than the whole category.
+export function setEquipped(itemId: string, equipped: boolean): { ok: true } | { error: 'not-owned' } {
+  const db = getDb();
+  let outcome: { ok: true } | { error: 'not-owned' } = { error: 'not-owned' };
+  const tx = db.transaction(() => {
+    const row = db
+      .prepare<[string], { category: string }>(
+        `SELECT category FROM unlocks WHERE item_id = ?`,
+      )
+      .get(itemId);
+    if (!row) {
+      outcome = { error: 'not-owned' };
+      return;
+    }
+    if (equipped) {
+      db.prepare<[string]>(
+        `UPDATE unlocks SET equipped = 0 WHERE category = ?`,
+      ).run(row.category);
+      db.prepare<[string]>(`UPDATE unlocks SET equipped = 1 WHERE item_id = ?`).run(itemId);
+    } else {
+      db.prepare<[string]>(`UPDATE unlocks SET equipped = 0 WHERE item_id = ?`).run(itemId);
+    }
+    outcome = { ok: true };
+  });
+  tx();
+  return outcome;
+}
+
 export function getUnlocks(): UnlockedItem[] {
   const rows = getDb()
     .prepare<[], UnlockRow>(`SELECT * FROM unlocks ORDER BY acquired_at DESC`)

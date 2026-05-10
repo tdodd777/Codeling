@@ -36,6 +36,7 @@ export function Shop() {
   }, [feedback]);
 
   const ownedSet = new Set(unlocks.map((u) => u.itemId));
+  const equippedSet = new Set(unlocks.filter((u) => u.equipped).map((u) => u.itemId));
   const wantKind = tab === 'cosmetics' ? 'cosmetic' : 'upgrade';
   const catalogIds = new Set(items.map((i) => i.id));
   // Owned items the catalog doesn't list (e.g., wheel-only cosmetics) — surface
@@ -55,6 +56,26 @@ export function Shop() {
     ...ownedExtras,
   ];
   const bits = pet?.bits ?? 0;
+
+  async function handleToggleEquip(it: ShopItemView) {
+    if (pending) return;
+    const isEquipped = equippedSet.has(it.id);
+    setPending(it.id);
+    try {
+      const res = await window.codeling.setEquipped(it.id, !isEquipped);
+      if ('ok' in res) {
+        setFeedback({
+          itemId: it.id,
+          kind: 'success',
+          message: isEquipped ? 'Unequipped' : 'Equipped',
+        });
+      } else {
+        setFeedback({ itemId: it.id, kind: 'error', message: 'Equip failed' });
+      }
+    } finally {
+      setPending(null);
+    }
+  }
 
   async function handleBuy(it: ShopItemView) {
     if (pending) return;
@@ -127,7 +148,17 @@ export function Shop() {
                   </div>
                   <div className="shop-item__action">
                     {owned ? (
-                      <span className="shop-item__owned">Owned</span>
+                      it.kind === 'cosmetic' ? (
+                        <button
+                          className={`shop-item__equip ${equippedSet.has(it.id) ? 'shop-item__equip--on' : ''}`}
+                          onClick={() => handleToggleEquip(it)}
+                          disabled={isPending}
+                        >
+                          {isPending ? '…' : equippedSet.has(it.id) ? 'Equipped' : 'Equip'}
+                        </button>
+                      ) : (
+                        <span className="shop-item__owned">Owned</span>
+                      )
                     ) : (
                       <button
                         className="shop-item__buy"

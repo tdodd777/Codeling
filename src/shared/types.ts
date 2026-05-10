@@ -14,6 +14,10 @@ export interface SpriteManifest {
   static: string; // url to single-frame fallback (always populated)
   animations: Record<string, Partial<Record<Direction, string[]>>>;
   background?: string; // url to a stage scenery PNG, if the species has one
+  // Per-cosmetic-id, per-direction overlay URLs. Empty record when no
+  // cosmetics/ subdir exists. Renderer composites these atop the base sprite
+  // when the matching item is equipped.
+  cosmeticOverlays: Record<string, Partial<Record<Direction, string>>>;
 }
 
 export interface PetState {
@@ -142,6 +146,7 @@ export interface CodelingApi {
   purchase(itemId: string): Promise<PurchaseResponse>;
   renamePet(name: string): Promise<RenameResponse>;
   setSpinThreshold(n: number): Promise<SpinThresholdResponse>;
+  setEquipped(itemId: string, equipped: boolean): Promise<{ ok: true } | { error: 'not-owned' }>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
   getAchievements(): Promise<AchievementView[]>;

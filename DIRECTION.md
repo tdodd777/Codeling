@@ -101,6 +101,13 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Cosmetic equip + overlay composite (M2 partial)
+- **Mutex by category, not slot.** `setEquipped` unequips all other cosmetics in the same category before equipping the new one. Slot-based mutex (head, eye, body) waits until art arrives with explicit slots — premature now with three placeholder cosmetics.
+- **Overlay scan lives next to rotations/animations in the manifest.** `cosmetics/<id>/<direction>.png` mirrors the rest of the sprite layout. Stage-specific overrides work the same way (`stage_<N>/cosmetics/...`) thanks to the existing `speciesStageRoot` fallback.
+- **Renderer picks direction with south fallback.** `cosmeticOverlays[id][direction] ?? cosmeticOverlays[id].south` — most cosmetics will only have south art for a while; rendering the south overlay even when the base is facing east is acceptable until per-direction art lands. Better than no overlay.
+- **Float animation moved to the wrapper.** Previously `pet-sprite-idle` was on the single `<img>`; now it's on the stack `<div>` so base + overlays bob together. Avoids any chance of base-overlay desync.
+- **No-op friendly.** Without any cosmetic PNG art on disk, equip toggle still works — just no visual change. The Shop "Equipped" badge confirms state. When art lands, it composites on next manifest fetch with no code change.
+
 ### 2026-05-10 — Daily summary (M5 partial)
 - **Generic `meta (key TEXT PRIMARY KEY, value TEXT)` table** for app-level state that doesn't deserve a dedicated table. First user is `last_summary_date`. Future settings that don't fit the dedicated `pet`/`spin_state` rows can land here too — single-row config that's not part of any entity.
 - **Idempotent fire** — `maybeShowDailySummary()` is called from both boot and ingest. Boot covers the case where the user opens the panel without sending a message; ingest covers the case where the app was running through midnight. The `last_summary_date == today` check makes both paths safe.

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { PET_NAME_MAX_LENGTH, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest, type UnlockedItem } from '@shared/types';
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
@@ -20,6 +20,7 @@ export function Home() {
   const [spin, setSpin] = useState<SpinState | null>(null);
   const [streak, setStreak] = useState(0);
   const [manifest, setManifest] = useState<SpriteManifest | null>(null);
+  const [equipped, setEquipped] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
   const dismissRef = useRef<number | null>(null);
@@ -29,6 +30,10 @@ export function Home() {
       window.codeling.getPet().then(setPet).catch(console.error);
       window.codeling.getSpinState().then(setSpin).catch(console.error);
       window.codeling.getStreak().then(setStreak).catch(console.error);
+      window.codeling
+        .getUnlocks()
+        .then((u: UnlockedItem[]) => setEquipped(u.filter((x) => x.equipped).map((x) => x.itemId)))
+        .catch(console.error);
     };
     refetch();
     return window.codeling.onUpdate(refetch);
@@ -110,7 +115,12 @@ export function Home() {
         className={`pet-stage ${manifest?.background ? 'pet-stage--scenic' : ''}`}
         style={manifest?.background ? { backgroundImage: `url("${manifest.background}")` } : undefined}
       >
-        <PetSprite species={pet.species} stage={pet.evolutionStage} size={128} />
+        <PetSprite
+          species={pet.species}
+          stage={pet.evolutionStage}
+          size={128}
+          equippedCosmetics={equipped}
+        />
       </div>
 
       <div className="pet-meta">

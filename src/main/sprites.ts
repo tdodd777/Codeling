@@ -106,6 +106,7 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
   const manifest: SpriteManifest = {
     static: urlFor(urlSegments, 'rotations', 'south.png'),
     animations: {},
+    cosmeticOverlays: {},
   };
   const background = findBackground(species, stage);
   if (background) manifest.background = background;
@@ -157,7 +158,7 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
 
   // 3. Backwards-compat: flat layout (<animation>/<direction>_<frame>.png).
   for (const entry of listIfDir(root)) {
-    if (entry === 'rotations' || entry === 'animations' || entry === 'metadata.json') continue;
+    if (entry === 'rotations' || entry === 'animations' || entry === 'cosmetics' || entry === 'metadata.json') continue;
     if (/^stage_\d+$/.test(entry)) continue; // stage subdirs are scanned via their own buildSpriteManifest call
     const dir = path.join(root, entry);
     if (!fs.statSync(dir).isDirectory()) continue;
@@ -176,6 +177,29 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
     if (Object.keys(directions).length > 0) {
       manifest.animations[entry.toLowerCase()] = directions;
     }
+  }
+
+  // 4. cosmetics/<cosmeticId>/<direction>.png — equipped overlay sprites.
+  // Same direction-aliasing rules as rotations/ (south.png, etc.). Renderer
+  // composites the matching direction over the base sprite when the player
+  // equips this cosmetic.
+  const cosmeticsRoot = path.join(root, 'cosmetics');
+  for (const id of listIfDir(cosmeticsRoot)) {
+    const idDir = path.join(cosmeticsRoot, id);
+    try {
+      if (!fs.statSync(idDir).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    const dirs: Partial<Record<Direction, string>> = {};
+    for (const file of listIfDir(idDir)) {
+      if (!file.toLowerCase().endsWith('.png')) continue;
+      const base = file.replace(/\.png$/i, '').toLowerCase();
+      const direction = DIRECTION_ALIASES[base];
+      if (!direction) continue;
+      dirs[direction] = urlFor(urlSegments, 'cosmetics', id, file);
+    }
+    if (Object.keys(dirs).length > 0) manifest.cosmeticOverlays[id] = dirs;
   }
 
   const summary = Object.entries(manifest.animations)

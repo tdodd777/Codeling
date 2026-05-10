@@ -10,7 +10,7 @@ import {
   type SpinResponse,
   type SpinThresholdResponse,
 } from '@shared/types';
-import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
+import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setEquipped, setSpinThreshold } from './db/repos';
 import { events } from './events';
 import { notifyUpdate } from './notify';
 import { exportSaveDialog, importSaveDialog } from './save';
@@ -65,6 +65,11 @@ export function registerIpcHandlers(): void {
       }
       throw err;
     }
+  });
+  ipcMain.handle('codeling:setEquipped', (_, itemId: string, equipped: boolean) => {
+    const result = setEquipped(itemId, !!equipped);
+    if ('ok' in result) notifyUpdate();
+    return result;
   });
   ipcMain.handle('codeling:resetSave', (): { ok: true } => {
     resetSave();

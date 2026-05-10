@@ -14,6 +14,7 @@ const api: CodelingApi = {
   purchase: (itemId) => ipcRenderer.invoke('codeling:purchase', itemId),
   renamePet: (name) => ipcRenderer.invoke('codeling:renamePet', name),
   setSpinThreshold: (n) => ipcRenderer.invoke('codeling:setSpinThreshold', n),
+  setEquipped: (itemId, equipped) => ipcRenderer.invoke('codeling:setEquipped', itemId, equipped),
   resetSave: () => ipcRenderer.invoke('codeling:resetSave'),
   getReceiverInfo: () => ipcRenderer.invoke('codeling:getReceiverInfo'),
   getAchievements: () => ipcRenderer.invoke('codeling:getAchievements'),

@@ -104,7 +104,7 @@ Code-only items shipped; the rest is gated on art landing in `assets/sprites/`.
 - [ ] Silhouette reveal animation on starter assignment — **blocked on starter randomizer**
 - [x] Pet rename UI: click `pet-name` on Home → inline input (`PetNameEdit` in `Home.tsx`); IPC `codeling:renamePet(name)` validates 1-`PET_NAME_MAX_LENGTH` chars trimmed, returns distinct `empty-name`/`name-too-long` error codes. Tray tooltip updates via new `pet:renamed` event.
 - [ ] Other-direction sprite usage: stage shows pet facing toward whichever side made it gain XP last? (TBD — pick something fun)
-- [ ] Cosmetic equip/render: equipped accessories composited over base sprite at runtime (CSS `position: absolute` over `<PetSprite>`, or canvas-based compositor) — **blocked on overlay art**
+- [x] Cosmetic equip/render code path: `setEquipped` IPC mutex'd by category (one cosmetic at a time for now); manifest scans `cosmetics/<id>/<direction>.png` (with stage_N override + south fallback); `<PetSprite>` composites overlays as absolute-positioned imgs over the base. No-op until overlay PNGs land in `assets/sprites/<species>/cosmetics/<id>/`. Shop replaces "Owned" pill on cosmetics with an Equip/Equipped toggle. Float animation moved to wrapper so base + overlays move in sync.
 
 ---
 
