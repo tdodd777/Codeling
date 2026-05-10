@@ -77,7 +77,8 @@ The interim env-var installer scripts are in place at `scripts/install-telemetry
 - [ ] **macOS** (zsh) — run `./scripts/install-telemetry.sh install`. Open a new Terminal/iTerm tab → `printenv | grep -E 'OTEL|CLAUDE'` should show all six vars. Run `uninstall` → block is gone from `~/.zshrc`. Confirm only the marked block was touched (other rc edits intact).
 - [ ] **Linux** (bash) — same drill against `~/.bashrc`.
 - [ ] **Conflict detection** — set `OTEL_EXPORTER_OTLP_ENDPOINT` to a non-Codeling URL first, then run `install`. Confirm: warning lands, no overwrite. Re-run with `-Force` (Windows) or matching `ENDPOINT=...` arg (POSIX) → confirm overwrite proceeds.
-- [ ] **Stop hook installer** (not yet implemented) — confirm the marked block written to `~/.claude/settings.json` round-trips correctly when the user already has a `hooks.Stop` array.
+- [ ] **Stop hook installer** (`scripts/install-stop-hook.mjs`) — run `npm run stop-hook:install` against a `~/.claude/settings.json` that already has a non-Codeling Stop hook. Confirm: existing entries are preserved, Codeling's entry is appended once. Run again → still exactly one Codeling entry. Run `stop-hook:uninstall` → only the Codeling entry is removed, others intact.
+- [ ] **Stop hook end-to-end** — start `npm start` (Codeling running), `stop-hook:install`, then trigger a Claude Code Stop event (any normal `claude` invocation that completes a turn). Codeling's main-process console should log a stop-hook receipt; if you bumped the OTEL exporter off, message_count should still climb on the Home tab.
 
 ---
 

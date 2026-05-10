@@ -9,7 +9,10 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "stop-hook:install": "node ./scripts/install-stop-hook.mjs install",
+    "stop-hook:uninstall": "node ./scripts/install-stop-hook.mjs uninstall",
+    "stop-hook:status": "node ./scripts/install-stop-hook.mjs status"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.12.2",

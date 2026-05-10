@@ -47,6 +47,18 @@ Restart any open shells, VS Code, or terminals after install — env vars only p
 
 Eventually all of this gets folded into `npx codeling install` along with auto-launch + Stop-hook installation.
 
+### (Optional) Catch dropped messages with the Stop hook
+
+Claude Code's `Stop` hook fires once per turn end. Routing it to Codeling's receiver gives a supplementary message tally — when the OTEL exporter drops a `user_prompt` log, the Stop event still bumps the count.
+
+```bash
+npm run stop-hook:install   # adds an entry to ~/.claude/settings.json
+npm run stop-hook:status
+npm run stop-hook:uninstall
+```
+
+The installer is a small Node script (`scripts/install-stop-hook.mjs`); it edits `~/.claude/settings.json` in place, tagging Codeling's entry by the marker URL so uninstall stays surgical. New Claude Code sessions pick up the hook automatically.
+
 <details>
 <summary>Manual env vars (if you'd rather set them yourself)</summary>
 

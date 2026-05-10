@@ -28,6 +28,9 @@ function runMigrations(d: Database.Database): void {
   if (!sessionCols.includes('cost_usd')) {
     d.exec(`ALTER TABLE sessions ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0`);
   }
+  if (!sessionCols.includes('stop_event_count')) {
+    d.exec(`ALTER TABLE sessions ADD COLUMN stop_event_count INTEGER NOT NULL DEFAULT 0`);
+  }
 }
 
 // Insert default pet + spin_state rows if missing. Exported so reset-save can

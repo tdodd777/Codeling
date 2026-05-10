@@ -1,5 +1,6 @@
 import express from 'express';
 import type { Server } from 'node:http';
+import { handleStopHook, type StopHookEvent } from '../stop-hook';
 import { getOtlpDecoders } from './decoders';
 import { ingest } from './ingest';
 
@@ -50,6 +51,25 @@ export async function startHttpReceiver(): Promise<Server> {
     } catch (err) {
       console.error('[otel:http] log decode failed', err);
       res.status(400).end();
+    }
+  });
+
+  // Codeling-specific endpoint, not OTLP. The Claude Code Stop hook posts a
+  // JSON event with session_id (and other fields we ignore). Used as a
+  // supplementary tally — see src/main/stop-hook.ts for algorithm.
+  app.post('/codeling/stop-hook', (req, res) => {
+    try {
+      const body: StopHookEvent =
+        typeof req.body === 'object' && req.body !== null ? req.body : {};
+      const result = handleStopHook(body);
+      if ('error' in result) {
+        res.status(400).json(result);
+        return;
+      }
+      res.status(204).end();
+    } catch (err) {
+      console.error('[stop-hook] failed', err);
+      res.status(500).end();
     }
   });
 
