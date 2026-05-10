@@ -114,5 +114,6 @@ Drop a PixelLab Character Creator export folder into `assets/sprites/<species>/`
 |---|---|
 | `npm start` | Forge dev — Vite HMR + Electron, hot-reloads main process on save (type `rs` to manually restart) |
 | `npm run lint` | TypeScript type check (`tsc --noEmit`) |
+| `npm test` | Run vitest (pure-logic suites); `npm run test:watch` for watch mode |
 | `npm run package` | Forge package — produces an unpacked binary |
 | `npm run make` | Forge make — produces installers (Squirrel/DEB/RPM/ZIP) |
