@@ -37,6 +37,19 @@ export function aggregateMetrics(payload: unknown): SessionOp[] {
         const sum = pick<Record<string, unknown>>(m, 'sum');
         if (!sum) continue;
 
+        // Aggregator math assumes DELTA temporality — additive upserts. If
+        // Claude Code ever switches a metric to CUMULATIVE (each data point is
+        // the absolute total since metric start), naïve addition would balloon.
+        // Skip with a warning rather than silently corrupt totals; proper
+        // CUMULATIVE handling would need per-(session, field) state.
+        const temporality = Number(
+          pick<number | string>(sum, 'aggregation_temporality', 'aggregationTemporality') ?? 0,
+        );
+        if (temporality === 2 /* CUMULATIVE */) {
+          console.warn(`[otel] skipping ${name}: CUMULATIVE temporality not supported (DELTA expected)`);
+          continue;
+        }
+
         const dataPoints = pick<unknown[]>(sum, 'data_points', 'dataPoints') ?? [];
         for (const dp of dataPoints) {
           const dpObj = dp as Record<string, unknown>;

@@ -186,45 +186,28 @@ Rather than polling, ingest pushes a debounced `codeling:update` to all windows.
 Roughly ordered by impact for the next iteration.
 
 ### Onboarding
-- **`npx codeling install` flow** — the north-star install. Should:
-  - Install/launch the app
-  - Set OTEL env vars persistently (Windows: `[Environment]::SetEnvironmentVariable(..., "User")`; macOS/Linux: marked block in `~/.zshrc` or `~/.bashrc`) — *interim scripts shipped, see decision below*
-  - Optionally install Stop hook to `~/.claude/settings.json`
-  - Register auto-launch on login
+- **Bundled `npx codeling install`** — the north-star install. The interim pieces are all shipped (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, Settings → Application auto-launch toggle); what's left is the assembly + `bin` setup that wraps them in one command and handles app download/launch + first-launch UX.
 
-### Game loop
-- **Achievements / streaks** — daily streak, lifetime totals milestones
+### Visuals — all art-blocked (HUMAN.md tracks asset tasks)
+- **Species 2 & 3** — slime/blob and robot, all directions, all evolution stages.
+- **Sprite layering for cosmetics** — code path shipped (manifest scans `cosmetics/<id>/<direction>.png`, equip toggle in Shop, overlay render in PetSprite). No-op until overlay PNG art lands.
+- **8-directional idle / animation frames** — manifest scans them; renderer + tray currently use south-only. Pick a behavior (face-direction-of-last-XP-source? camera follow?) once the rest stabilizes.
+- **Starter selection animation** — silhouette reveal on first launch. Blocked on species 2/3 art.
 
-### Visuals
-- **Per-character pet-stage backgrounds** — give each species a default scene behind the sprite in the Home tab stage area (e.g., wizard tower/spellbook, slime forest, robot lab). Right now the stage is a flat dark purple panel. Suggested layout: `assets/sprites/<species>/background.png` consumed by the manifest scanner; `<PetSprite>` parent renders it as a CSS `background-image`. Make backgrounds optional so it's a graceful fallback when missing. Future: shop-purchased backgrounds layer on top of (or replace) the species default — same slot, different source.
-- **Real PixelLab wizard sprite** — done; PixelLab export landed at `assets/sprites/wizard/`
-- **Species 2 & 3** — slime/blob and robot, all directions, all evolution stages
-- **Sprite layering for cosmetics** — accessory PNGs composited over base sprite
-- **8-directional idle / animation frames** — currently south-only idle plays at 6 FPS in panel and 4 FPS in tray. Other directions (and walk/attack) are scanned into the manifest but unused.
-- **Starter selection animation** — silhouette reveal on first launch (only after all 3 species have art)
-- **Per-species tray crop tuning** — `processForTray` currently uses 0.55 (top 55%) head-crop tuned for humanoid wizard. Slime/robot likely want different fractions or no crop. Add `TRAY_HEAD_FRACTION: Record<Species, number>` when those species land.
-
-### Stop hook
-- Installer that adds Codeling's local endpoint to `~/.claude/settings.json` `hooks.Stop`
-- Receiver endpoint in main process that ingests Stop hook payloads as a supplementary message tally (cross-check against `user_prompt` log events to catch dropped OTEL data)
-
-### Distribution
-- Code signing (macOS notarization, Windows Authenticode)
+### Distribution (M4)
+- Code signing (macOS notarization, Windows Authenticode) — needs paid certs, HUMAN.md tracks
 - Auto-updates (Squirrel.Mac / Squirrel.Windows via Forge)
-- DMG / MSI / Squirrel installers
+- DMG / MSI / Squirrel installer outputs
 - Homebrew tap, scoop manifest, winget submission
 
-### Settings / persistence
-- User-editable settings panel: spin threshold, XP/bit rates, telemetry on/off
-- Pet rename UI
-- Cosmetic equip toggle
-- Reset / export / import save
+### Settings leftovers
+- **XP / bit rate editing** — needs `RULES` → DB-backed refactor before exposing in the Settings panel.
+- **Telemetry on/off switch** — receiver port lifecycle (start/stop without restarting the app). Spec out before building.
 
 ---
 
 ## Open questions
 
-- **Cumulative vs delta resilience** — aggregator currently assumes all token metrics are DELTA. If Claude Code ever switches to CUMULATIVE temporality, totals will balloon. Add a temporality check + branch before that becomes a real risk.
-- **Multi-machine** — does a user expect their pet to follow them between machines? Implies cloud sync, which implies an account. Default answer: no, local-only, but worth revisiting.
-- **Hook loop risk** — a Stop-hook installer that calls back into Codeling's HTTP receiver could create a loop if Codeling itself ever invokes `claude`. Worth a guard (skip telemetry when `CLAUDE_CODE_ENTRY_POINT` indicates a self-call).
-- **OTEL endpoint conflicts** — if a user already has `OTEL_EXPORTER_OTLP_ENDPOINT` set for another purpose (their own observability stack), Codeling shouldn't clobber it. Detect on install and prompt.
+- **Cumulative vs delta resilience** — aggregator now skips CUMULATIVE-temporality metrics with a warning rather than ballooning. Proper handling (per-(session, field) cumulative state for delta derivation) is still open if Claude Code switches.
+- **Multi-machine** — does a user expect their pet to follow them between machines? Implies cloud sync, which implies an account. Default answer: no, local-only, but worth revisiting. Save export/import covers manual migration in the meantime.
+- **Hook loop risk** — a Stop-hook installer that calls back into Codeling's HTTP receiver could create a loop if Codeling itself ever invokes `claude`. Worth a guard (skip telemetry when `CLAUDE_CODE_ENTRY_POINT` indicates a self-call). Premature until something actually spawns `claude`.
