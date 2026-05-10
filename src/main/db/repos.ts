@@ -59,6 +59,7 @@ export function resetSave(): void {
   const tx = db.transaction(() => {
     db.exec(`DELETE FROM otel_events`);
     db.exec(`DELETE FROM achievements`);
+    db.exec(`DELETE FROM daily_activity`);
     db.exec(`DELETE FROM unlocks`);
     db.exec(`DELETE FROM sessions`);
     db.exec(`DELETE FROM spin_state`);

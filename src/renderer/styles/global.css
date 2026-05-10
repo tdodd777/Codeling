@@ -177,9 +177,25 @@ html, body, #root {
   transition: width 0.3s ease;
 }
 
+.pet-meta__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
 .bits {
   color: var(--accent);
   font-weight: 500;
+}
+
+.streak {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-elev);
 }
 
 .spin {

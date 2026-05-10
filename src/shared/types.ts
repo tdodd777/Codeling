@@ -145,6 +145,7 @@ export interface CodelingApi {
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
   getAchievements(): Promise<AchievementView[]>;
+  getStreak(): Promise<number>;
   onUpdate(cb: () => void): () => void;
 }
 

@@ -18,6 +18,7 @@ function describeApplied(result: SpinResult): string {
 export function Home() {
   const [pet, setPet] = useState<PetState | null>(null);
   const [spin, setSpin] = useState<SpinState | null>(null);
+  const [streak, setStreak] = useState(0);
   const [manifest, setManifest] = useState<SpriteManifest | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
@@ -27,6 +28,7 @@ export function Home() {
     const refetch = () => {
       window.codeling.getPet().then(setPet).catch(console.error);
       window.codeling.getSpinState().then(setSpin).catch(console.error);
+      window.codeling.getStreak().then(setStreak).catch(console.error);
     };
     refetch();
     return window.codeling.onUpdate(refetch);
@@ -103,7 +105,14 @@ export function Home() {
         <div className="xp-bar">
           <div className="xp-bar__fill" style={{ width: `${xpPct}%` }} />
         </div>
-        <div className="bits">{pet.bits} bits</div>
+        <div className="pet-meta__row">
+          <div className="bits">{pet.bits} bits</div>
+          {streak > 0 && (
+            <div className="streak" title="Consecutive days with activity">
+              {streak}-day streak
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={`spin ${spinReady ? 'spin--ready' : 'spin--locked'}`}>

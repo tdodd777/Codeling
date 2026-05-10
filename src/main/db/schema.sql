@@ -49,3 +49,7 @@ CREATE TABLE IF NOT EXISTS achievements (
   id TEXT PRIMARY KEY,
   earned_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS daily_activity (
+  date TEXT PRIMARY KEY -- YYYY-MM-DD in local time
+);

@@ -17,6 +17,7 @@ const api: CodelingApi = {
   resetSave: () => ipcRenderer.invoke('codeling:resetSave'),
   getReceiverInfo: () => ipcRenderer.invoke('codeling:getReceiverInfo'),
   getAchievements: () => ipcRenderer.invoke('codeling:getAchievements'),
+  getStreak: () => ipcRenderer.invoke('codeling:getStreak'),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

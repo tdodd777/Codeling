@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Daily streak (M5 partial)
+- **Bucketed by local date, not UTC.** `localDateString()` builds `YYYY-MM-DD` from the user's wall clock. UTC bucketing would surprise a US user with a 4 PM "day rolled over" boundary. Tradeoff: streaks are slightly leaky across timezone changes (move from PST to JST → bucket shifts; rare in practice).
+- **Streak counts back from today *or yesterday*.** A user's streak doesn't break the moment midnight passes — it stays "alive" until the user fails to log a message before the *following* midnight. Matches Snapchat/Duolingo expectations. Implemented as: if today has activity, start there; otherwise start at yesterday; otherwise streak is 0.
+- **Activity is recorded on ingest, not separately**. Same pipeline that bumps message_count writes today's date row via INSERT OR IGNORE. No new IPC, no app-level tracking.
+- **Streak surfaces in Snapshot for achievements**. Achievement defs (`streak_3` / `streak_7` / `streak_30`) read `s.streakDays`. Same evaluator pattern as the rest — no special-case streak machinery.
+
 ### 2026-05-10 — Achievements (M5 partial)
 - **State-derived, not event-derived.** Every achievement has a `check(snapshot)` predicate that re-evaluates against the current totals. No "first message" event hook, no streak counter columns — just `SUM(message_count) FROM sessions >= 1`. Means resetSave clears them naturally; means new defs added later auto-evaluate against the existing save without backfill code.
 - **One central evaluator, called from three sites.** `evaluateAchievements()` runs after applyEconomy (covers level/evolution/messages/cost), after performSpin (cosmetic-from-wheel), and after performPurchase (first-cosmetic, first-upgrade). Each call site is at the *boundary* of a state mutation, after the txn commits so listeners can't see partial state.

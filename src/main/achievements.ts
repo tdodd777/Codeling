@@ -1,5 +1,6 @@
 import { getDb } from './db/client';
 import { events } from './events';
+import { getCurrentStreak } from './streaks';
 
 // Achievement registry. Each entry is checked against a Snapshot of current
 // state (cheap derived totals) on every "tick" — defined as ingest, spin, or
@@ -24,6 +25,7 @@ interface Snapshot {
   pet: { level: number; evolutionStage: number };
   totals: { messages: number; outputTokens: number; costUsd: number };
   unlockCounts: { cosmetic: number; upgrade: number };
+  streakDays: number;
 }
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
@@ -62,6 +64,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     tier: 'bronze', check: (s) => s.totals.costUsd >= 1 },
   { id: 'spend_10usd', label: 'Heavy lifting',  description: '$10 of session cost',
     tier: 'silver', check: (s) => s.totals.costUsd >= 10 },
+
+  // Streaks — daily consistency
+  { id: 'streak_3',  label: 'Warming up',  description: '3-day streak',
+    tier: 'bronze', check: (s) => s.streakDays >= 3 },
+  { id: 'streak_7',  label: 'Habit',       description: '7-day streak',
+    tier: 'silver', check: (s) => s.streakDays >= 7 },
+  { id: 'streak_30', label: 'Devout',      description: '30-day streak',
+    tier: 'gold',   check: (s) => s.streakDays >= 30 },
 ];
 
 function buildSnapshot(): Snapshot {
@@ -107,6 +117,7 @@ function buildSnapshot(): Snapshot {
       cosmetic: counts?.cosmetic ?? 0,
       upgrade: counts?.upgrade ?? 0,
     },
+    streakDays: getCurrentStreak(),
   };
 }
 

@@ -13,6 +13,7 @@ import {
 import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
 import { events } from './events';
 import { notifyUpdate } from './notify';
+import { getCurrentStreak } from './streaks';
 import { SHOP_ITEMS } from './shop/catalog';
 import { performPurchase } from './shop';
 import { performSpin } from './spin';
@@ -76,6 +77,7 @@ export function registerIpcHandlers(): void {
     grpc: 'http://127.0.0.1:4317',
   }));
   ipcMain.handle('codeling:getAchievements', () => getAchievementsView());
+  ipcMain.handle('codeling:getStreak', () => getCurrentStreak());
   ipcMain.handle('codeling:renamePet', (_, name: string): RenameResponse => {
     if (typeof name !== 'string') return { error: 'empty-name' };
     try {
