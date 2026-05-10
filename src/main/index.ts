@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import type { Species } from '@shared/types';
 import { evaluateAchievements } from './achievements';
+import { maybeShowDailySummary } from './daily-summary';
 import { getDb, closeDb } from './db/client';
 import { getPet } from './db/repos';
 import { events } from './events';
@@ -168,6 +169,9 @@ async function bootstrap() {
   // — without this an upgraded user would get a burst of OS notifications on
   // their next ingest tick for everything they've already earned over time.
   evaluateAchievements(true);
+  // Show yesterday's recap on first launch each local day. Cheap idempotent
+  // check; safe to call from boot even if we'll also call from ingest.
+  maybeShowDailySummary();
   registerIpcHandlers();
 
   // Start both OTLP receivers in parallel; failures shouldn't block the UI.

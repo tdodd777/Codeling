@@ -16,9 +16,10 @@ interface SaveFile {
   spin_state: unknown[];
   achievements: unknown[];
   daily_activity: unknown[];
+  meta?: unknown[];
 }
 
-const TABLES = ['pet', 'sessions', 'unlocks', 'spin_state', 'achievements', 'daily_activity'] as const;
+const TABLES = ['pet', 'sessions', 'unlocks', 'spin_state', 'achievements', 'daily_activity', 'meta'] as const;
 type TableName = (typeof TABLES)[number];
 
 function dumpTable(name: TableName): unknown[] {
@@ -35,6 +36,7 @@ function buildSave(): SaveFile {
     spin_state: dumpTable('spin_state'),
     achievements: dumpTable('achievements'),
     daily_activity: dumpTable('daily_activity'),
+    meta: dumpTable('meta'),
   };
 }
 

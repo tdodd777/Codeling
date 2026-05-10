@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Daily summary (M5 partial)
+- **Generic `meta (key TEXT PRIMARY KEY, value TEXT)` table** for app-level state that doesn't deserve a dedicated table. First user is `last_summary_date`. Future settings that don't fit the dedicated `pet`/`spin_state` rows can land here too — single-row config that's not part of any entity.
+- **Idempotent fire** — `maybeShowDailySummary()` is called from both boot and ingest. Boot covers the case where the user opens the panel without sending a message; ingest covers the case where the app was running through midnight. The `last_summary_date == today` check makes both paths safe.
+- **Skip empty days entirely.** No "0 messages yesterday" notifications, but we still mark the meta key so we don't re-evaluate every ingest tick. Dead-pixel cost (one extra meta write) vs the alternative of a noisy "you had no activity yesterday" surface.
+- **Notification is `silent: true`.** Less obtrusive than the achievement chime — the user opted in to telemetry, the app shouldn't shout at them every morning. Still appears in the OS notification center for the user to discover at their pace.
+
 ### 2026-05-10 — Stop hook + supplementary tally (M3 partial)
 - **Stop event is a per-turn end signal; OTEL `user_prompt` log is a per-turn start signal.** They normally come in pairs. Backfill is one-sided: `message_count = max(message_count, stop_event_count)` after each Stop. Means OTEL drops are caught at turn end (a few seconds late) without ever double-counting when OTEL is healthy.
 - **Stop endpoint lives on the OTLP HTTP receiver, not a separate server.** Same port (4318), same Express app — fewer config knobs for the user, and the OTEL env-var installer already covered point-Claude-Code-at-the-receiver, so the URL is implicit. Distinct path namespace (`/codeling/...` vs `/v1/...`) keeps the two concerns clean.

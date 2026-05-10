@@ -54,3 +54,8 @@ CREATE TABLE IF NOT EXISTS achievements (
 CREATE TABLE IF NOT EXISTS daily_activity (
   date TEXT PRIMARY KEY -- YYYY-MM-DD in local time
 );
+
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

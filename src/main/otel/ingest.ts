@@ -1,5 +1,6 @@
 import type { SignalType, Transport } from '@shared/types';
 import { evaluateAchievements } from '../achievements';
+import { maybeShowDailySummary } from '../daily-summary';
 import { applySessionOps, recordOtelEvent } from '../db/repos';
 import { applyEconomy } from '../economy';
 import { notifyUpdate } from '../notify';
@@ -25,8 +26,12 @@ export function ingest(signalType: SignalType, transport: Transport, payload: un
 
   const totals = sumOps(ops);
   // Daily streak: a message today keeps the streak alive. Record before economy
-  // so the snapshot achievements see today included.
-  if (totals.message_count > 0) recordActivityToday();
+  // so the snapshot achievements see today included. Same beat is the natural
+  // place to fire yesterday's summary if the app survived through midnight.
+  if (totals.message_count > 0) {
+    recordActivityToday();
+    maybeShowDailySummary();
+  }
   const econ = applyEconomy({ messages: totals.message_count, outputTokens: totals.output_tokens });
   // Achievements are state-derived; one eval per ingest tick covers level,
   // evolution, message-count, streak, and cost milestones in one pass.
