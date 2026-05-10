@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import {
   SPIN_THRESHOLD_MAX,
   SPIN_THRESHOLD_MIN,
@@ -13,6 +13,7 @@ import {
 import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
 import { events } from './events';
 import { notifyUpdate } from './notify';
+import { exportSaveDialog, importSaveDialog } from './save';
 import { getCurrentStreak } from './streaks';
 import { SHOP_ITEMS } from './shop/catalog';
 import { performPurchase } from './shop';
@@ -78,6 +79,32 @@ export function registerIpcHandlers(): void {
   }));
   ipcMain.handle('codeling:getAchievements', () => getAchievementsView());
   ipcMain.handle('codeling:getStreak', () => getCurrentStreak());
+  ipcMain.handle('codeling:getAutoLaunch', (): boolean => {
+    return app.getLoginItemSettings().openAtLogin;
+  });
+  ipcMain.handle('codeling:setAutoLaunch', (_, enabled: boolean): boolean => {
+    // setLoginItemSettings is a no-op in unpackaged dev on some platforms; the
+    // returned getLoginItemSettings reflects the actual stored state, so the
+    // renderer sees the truth.
+    app.setLoginItemSettings({ openAtLogin: !!enabled });
+    return app.getLoginItemSettings().openAtLogin;
+  });
+  ipcMain.handle('codeling:exportSave', () => exportSaveDialog());
+  ipcMain.handle('codeling:importSave', async () => {
+    const res = await importSaveDialog();
+    if ('ok' in res) {
+      // Tray needs to refresh for the imported pet's species/stage; emit the
+      // same events resetSave does so all the same listeners fire.
+      events.emit('pet:reset');
+      try {
+        events.emit('pet:renamed', { name: getPet().name });
+      } catch {
+        /* pet read can fail in malformed-import edge cases — ignore */
+      }
+      notifyUpdate();
+    }
+    return res;
+  });
   ipcMain.handle('codeling:renamePet', (_, name: string): RenameResponse => {
     if (typeof name !== 'string') return { error: 'empty-name' };
     try {

@@ -18,6 +18,10 @@ const api: CodelingApi = {
   getReceiverInfo: () => ipcRenderer.invoke('codeling:getReceiverInfo'),
   getAchievements: () => ipcRenderer.invoke('codeling:getAchievements'),
   getStreak: () => ipcRenderer.invoke('codeling:getStreak'),
+  getAutoLaunch: () => ipcRenderer.invoke('codeling:getAutoLaunch'),
+  setAutoLaunch: (enabled) => ipcRenderer.invoke('codeling:setAutoLaunch', enabled),
+  exportSave: () => ipcRenderer.invoke('codeling:exportSave'),
+  importSave: () => ipcRenderer.invoke('codeling:importSave'),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

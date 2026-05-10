@@ -146,6 +146,13 @@ export interface CodelingApi {
   getReceiverInfo(): Promise<ReceiverInfo>;
   getAchievements(): Promise<AchievementView[]>;
   getStreak(): Promise<number>;
+  getAutoLaunch(): Promise<boolean>;
+  setAutoLaunch(enabled: boolean): Promise<boolean>;
+  exportSave(): Promise<{ ok: true; path: string } | { error: 'cancelled' | 'write-failed'; detail?: string }>;
+  importSave(): Promise<
+    | { ok: true; path: string }
+    | { error: 'cancelled' | 'read-failed' | 'invalid-format' | 'unsupported-version'; detail?: string }
+  >;
   onUpdate(cb: () => void): () => void;
 }
 

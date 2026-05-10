@@ -152,7 +152,8 @@ This is the make-or-break adoption flow. Build it once the game is fun enough to
   - OS notification per newly-earned achievement (tray balloon via `Notification`)
   - Stats tab renders earned + locked groups with tier-keyed left-border accent (bronze/silver/gold)
 - [x] Daily streak: `daily_activity (date TEXT PK)` table bucketed by local date. `recordActivityToday` from ingest when `message_count > 0`; `getCurrentStreak` walks back from today (or yesterday — streak still alive) until a missing day. `streak_3` / `streak_7` / `streak_30` achievements; "N-day streak" pill on Home tab.
-- [ ] Export / import save (JSON dump of pet + unlocks + sessions, for moving between machines)
+- [x] Auto-launch on login: Settings → Application toggle wraps `app.setLoginItemSettings`. Reflects OS-stored truth via `getLoginItemSettings` so dev environments where the call no-ops surface as "didn't take" feedback.
+- [x] Export / import save: Settings → Save buttons. JSON dump (versioned, schema = `{ version, exportedAt, pet, sessions, unlocks, spin_state, achievements, daily_activity }`). Import is a single atomic txn: clear all + insert by table+column with unknown-column filtering, re-seed defaults afterward. `pet:reset` + `pet:renamed` events fire so tray refreshes for the imported pet.
 - [ ] Multi-machine sync (only if there's user demand — implies an account/server)
 - [ ] Daily summary notification ("Yesterday: 12 sessions, 47 messages, 3 levels gained")
 

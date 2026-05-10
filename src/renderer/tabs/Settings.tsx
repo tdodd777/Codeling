@@ -6,6 +6,8 @@ export function Settings() {
   const [receiver, setReceiver] = useState<ReceiverInfo | null>(null);
   const [thresholdDraft, setThresholdDraft] = useState<string>('');
   const [thresholdError, setThresholdError] = useState<string | null>(null);
+  const [autoLaunch, setAutoLaunch] = useState<boolean | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -18,8 +20,15 @@ export function Settings() {
     };
     refetch();
     window.codeling.getReceiverInfo().then(setReceiver).catch(console.error);
+    window.codeling.getAutoLaunch().then(setAutoLaunch).catch(console.error);
     return window.codeling.onUpdate(refetch);
   }, []);
+
+  useEffect(() => {
+    if (!saveMessage) return;
+    const t = window.setTimeout(() => setSaveMessage(null), 3500);
+    return () => window.clearTimeout(t);
+  }, [saveMessage]);
 
   async function commitThreshold() {
     setThresholdError(null);
@@ -34,6 +43,37 @@ export function Settings() {
       return;
     }
     setThresholdError(`Must be between ${res.min} and ${res.max}`);
+  }
+
+  async function toggleAutoLaunch() {
+    if (autoLaunch === null) return;
+    const next = !autoLaunch;
+    const written = await window.codeling.setAutoLaunch(next);
+    setAutoLaunch(written);
+    if (written !== next) {
+      // OS rejected the change (e.g., dev environment where setLoginItemSettings
+      // is a no-op) — surface that so user knows the toggle didn't take.
+      setSaveMessage({ kind: 'err', text: 'OS did not accept the change (try the packaged build)' });
+    }
+  }
+
+  async function handleExport() {
+    const res = await window.codeling.exportSave();
+    if ('ok' in res) {
+      setSaveMessage({ kind: 'ok', text: `Exported to ${res.path}` });
+    } else if (res.error !== 'cancelled') {
+      setSaveMessage({ kind: 'err', text: `Export failed: ${res.detail ?? res.error}` });
+    }
+  }
+
+  async function handleImport() {
+    const res = await window.codeling.importSave();
+    if ('ok' in res) {
+      setSaveMessage({ kind: 'ok', text: `Imported from ${res.path}` });
+    } else if (res.error !== 'cancelled') {
+      const detail = res.detail ? ` (${res.detail})` : '';
+      setSaveMessage({ kind: 'err', text: `Import failed: ${res.error}${detail}` });
+    }
   }
 
   async function performReset() {
@@ -73,6 +113,42 @@ export function Settings() {
             {thresholdError && <div className="setting-error">{thresholdError}</div>}
           </div>
         </div>
+      </Section>
+
+      <Section title="Application">
+        <div className="setting-row">
+          <div className="setting-row__main">
+            <div className="setting-row__label">Launch on login</div>
+            <div className="setting-row__hint">Codeling starts in the tray when you sign in</div>
+          </div>
+          <div className="setting-row__action">
+            <button
+              className={`toggle ${autoLaunch ? 'toggle--on' : ''}`}
+              onClick={toggleAutoLaunch}
+              disabled={autoLaunch === null}
+              role="switch"
+              aria-checked={!!autoLaunch}
+            >
+              <span className="toggle__thumb" />
+            </button>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Save">
+        <div className="setting-row">
+          <div className="setting-row__main">
+            <div className="setting-row__label">Move between machines</div>
+            <div className="setting-row__hint">JSON dump of pet, sessions, unlocks, achievements</div>
+          </div>
+          <div className="setting-row__action setting-row__action--horizontal">
+            <button className="ghost-btn" onClick={handleExport}>Export</button>
+            <button className="ghost-btn" onClick={handleImport}>Import</button>
+          </div>
+        </div>
+        {saveMessage && (
+          <div className={`save-message save-message--${saveMessage.kind}`}>{saveMessage.text}</div>
+        )}
       </Section>
 
       <Section title="Receiver">

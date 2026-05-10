@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Auto-launch + save export/import (M5 partial)
+- **Auto-launch state-of-truth lives with the OS, not in our DB.** Renderer reads via `app.getLoginItemSettings` → if the OS rejects a write (dev environment, missing entitlements), the next read returns the actual truth and the toggle reverts. No drift between what we think and what the OS does. Trade: setting takes effect only on the *next* login, not immediately, but that's the universal expectation for autostart toggles.
+- **Save format is versioned + insertion-flexible.** `version` on every export. Import refuses higher versions; lower versions migrate forward by schema-discovery — for each table, `pragma table_info` gives current columns, and we filter the JSON row's keys against that set. Means an old save imported into a newer schema simply gets DEFAULT values for new columns; new save imported into an older app errors clean rather than corrupting state.
+- **Import is atomic table-replace, not row-merge.** Cleaner mental model ("this save = this state") and avoids the design questions around merging timestamps / preferring one side. If a player wants merge-style sync that's a separate feature; export/import is for moving between machines, not collaborative state.
+- **`otel_events` is excluded from the dump.** Event log is debug-only state; including it would balloon the JSON and isn't useful on the destination machine. Cleared on import so the destination's debug log starts fresh.
+
 ### 2026-05-10 — Daily streak (M5 partial)
 - **Bucketed by local date, not UTC.** `localDateString()` builds `YYYY-MM-DD` from the user's wall clock. UTC bucketing would surprise a US user with a 4 PM "day rolled over" boundary. Tradeoff: streaks are slightly leaky across timezone changes (move from PST to JST → bucket shifts; rare in practice).
 - **Streak counts back from today *or yesterday*.** A user's streak doesn't break the moment midnight passes — it stays "alive" until the user fails to log a message before the *following* midnight. Matches Snapchat/Duolingo expectations. Implemented as: if today has activity, start there; otherwise start at yesterday; otherwise streak is 0.

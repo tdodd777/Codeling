@@ -624,6 +624,59 @@ html, body, #root {
   margin: 0;
 }
 
+.setting-row__action--horizontal {
+  flex-direction: row;
+  gap: 6px;
+}
+
+.toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease;
+}
+
+.toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fg);
+  transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle--on .toggle__thumb {
+  background: var(--bg);
+  transform: translateX(16px);
+}
+
+.save-message {
+  margin: 6px 12px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.save-message--ok  { color: #6dc685; }
+.save-message--err { color: #d68a8a; }
+
 /* --- Stats --- */
 
 .stats-row {
