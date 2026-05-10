@@ -1,0 +1,36 @@
+import { useEffect, useState } from 'react';
+import type { LifetimeStats } from '@shared/types';
+
+export function Stats() {
+  const [stats, setStats] = useState<LifetimeStats | null>(null);
+
+  useEffect(() => {
+    const refetch = () => {
+      window.codeling.getStats().then(setStats).catch(console.error);
+    };
+    refetch();
+    return window.codeling.onUpdate(refetch);
+  }, []);
+
+  if (!stats) return <div className="loading">Loading…</div>;
+
+  return (
+    <div className="stats">
+      <Row label="Sessions" value={stats.sessionCount} />
+      <Row label="Messages" value={stats.totalMessages} />
+      <Row label="Input tokens" value={stats.totalInputTokens} />
+      <Row label="Output tokens" value={stats.totalOutputTokens} />
+      <Row label="Cache read" value={stats.totalCacheReadTokens} />
+      <Row label="Cache create" value={stats.totalCacheCreationTokens} />
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="stats-row">
+      <span className="stats-label">{label}</span>
+      <span className="stats-value">{value.toLocaleString()}</span>
+    </div>
+  );
+}

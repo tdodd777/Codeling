@@ -1,0 +1,51 @@
+{
+  "character": {
+    "id": "db4bb76c-6c0a-417a-84bb-56f8309ed988",
+    "name": "Tiny chibi wizard, deep purple star-covered robe, oversized floppy pointy hat with a crescent moon charm, short stubby arms, glowing teal magic staff with a floating orb on top, big round expressive eyes, rosy cheeks, small tuft of white beard, warm gold and purple color palette, clean black pixel art outline, friendly and slightly mischievous expression",
+    "prompt": "Tiny chibi wizard, deep purple star-covered robe, oversized floppy pointy hat with a crescent moon charm, short stubby arms, glowing teal magic staff with a floating orb on top, big round expressive eyes, rosy cheeks, small tuft of white beard, warm gold and purple color palette, clean black pixel art outline, friendly and slightly mischievous expression",
+    "size": {
+      "width": 68,
+      "height": 68
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-05-09T23:39:10.975569+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "Breathing_Idle-3c8dc0f6": {
+        "south": [
+          "animations/Breathing_Idle-3c8dc0f6/south/frame_000.png",
+          "animations/Breathing_Idle-3c8dc0f6/south/frame_001.png",
+          "animations/Breathing_Idle-3c8dc0f6/south/frame_002.png",
+          "animations/Breathing_Idle-3c8dc0f6/south/frame_003.png"
+        ]
+      },
+      "Running-c929152c": {
+        "south": [
+          "animations/Running-c929152c/south/frame_000.png",
+          "animations/Running-c929152c/south/frame_001.png",
+          "animations/Running-c929152c/south/frame_002.png",
+          "animations/Running-c929152c/south/frame_003.png",
+          "animations/Running-c929152c/south/frame_004.png",
+          "animations/Running-c929152c/south/frame_005.png",
+          "animations/Running-c929152c/south/frame_006.png",
+          "animations/Running-c929152c/south/frame_007.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-05-10T15:36:03.902810"
+}

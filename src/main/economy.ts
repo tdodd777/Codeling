@@ -1,0 +1,112 @@
+import { getDb } from './db/client';
+
+// Tunables — central so they're easy to rebalance later from a single place.
+export const RULES = {
+  xpPerMessage: 10,
+  xpPerOutputTokens: 100, // 1 XP per N output tokens (integer division)
+  bitsPerMessage: 5,
+  bitsPerOutputTokens: 1000, // 1 bit per N output tokens
+  xpForLevel: (level: number) => level * 100, // XP needed to clear level → level+1
+} as const;
+
+export interface RewardDeltas {
+  messages: number;
+  outputTokens: number;
+}
+
+export interface EconomyResult {
+  xpGained: number;
+  bitsGained: number;
+  levelsGained: number;
+  spinsGranted: number;
+  changed: boolean;
+}
+
+interface PetRow {
+  level: number;
+  xp: number;
+  bits: number;
+}
+
+interface SpinRow {
+  spins_available: number;
+  messages_since_last_spin: number;
+  spin_threshold: number;
+}
+
+export function applyEconomy(d: RewardDeltas): EconomyResult {
+  const result: EconomyResult = {
+    xpGained: 0,
+    bitsGained: 0,
+    levelsGained: 0,
+    spinsGranted: 0,
+    changed: false,
+  };
+  if (d.messages <= 0 && d.outputTokens <= 0) return result;
+
+  const xpGained =
+    d.messages * RULES.xpPerMessage +
+    Math.floor(d.outputTokens / RULES.xpPerOutputTokens);
+  const bitsGained =
+    d.messages * RULES.bitsPerMessage +
+    Math.floor(d.outputTokens / RULES.bitsPerOutputTokens);
+
+  if (xpGained === 0 && bitsGained === 0 && d.messages === 0) return result;
+
+  const db = getDb();
+  const tx = db.transaction(() => {
+    // Pet: apply XP/bits, then unroll level-ups carrying XP forward.
+    const pet = db
+      .prepare<[], PetRow>(`SELECT level, xp, bits FROM pet WHERE id = 1`)
+      .get();
+    if (!pet) throw new Error('pet row missing');
+
+    let level = pet.level;
+    let xp = pet.xp + xpGained;
+    let levelsGained = 0;
+    while (xp >= RULES.xpForLevel(level)) {
+      xp -= RULES.xpForLevel(level);
+      level += 1;
+      levelsGained += 1;
+      if (levelsGained > 100) break; // safety on absurd batches
+    }
+    const bits = pet.bits + bitsGained;
+
+    db.prepare<[number, number, number]>(
+      `UPDATE pet SET level = ?, xp = ?, bits = ? WHERE id = 1`,
+    ).run(level, xp, bits);
+
+    result.xpGained = xpGained;
+    result.bitsGained = bitsGained;
+    result.levelsGained = levelsGained;
+
+    // Spin: only user messages bump the counter.
+    if (d.messages > 0) {
+      const spin = db
+        .prepare<[], SpinRow>(
+          `SELECT spins_available, messages_since_last_spin, spin_threshold FROM spin_state WHERE id = 1`,
+        )
+        .get();
+      if (!spin) throw new Error('spin_state row missing');
+
+      let pending = spin.messages_since_last_spin + d.messages;
+      let granted = 0;
+      while (pending >= spin.spin_threshold) {
+        pending -= spin.spin_threshold;
+        granted += 1;
+        if (granted > 100) break;
+      }
+
+      db.prepare<[number, number]>(
+        `UPDATE spin_state SET spins_available = spins_available + ?, messages_since_last_spin = ? WHERE id = 1`,
+      ).run(granted, pending);
+
+      result.spinsGranted = granted;
+    }
+
+    result.changed = true;
+  });
+  tx();
+
+  return result;
+}
