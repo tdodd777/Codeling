@@ -144,7 +144,8 @@ This is the make-or-break adoption flow. Build it once the game is fun enough to
   - Spin threshold inline numeric input (`SPIN_THRESHOLD_MIN`–`SPIN_THRESHOLD_MAX` range; commit on blur/Enter; per-row error)
   - Receiver section: read-only HTTP/gRPC endpoints + pointer to install scripts
   - Danger zone: Reset save (atomic txn wipes pet/sessions/unlocks/spin_state/otel_events/achievements, re-seeds defaults, fires `pet:reset` + `pet:renamed` so tray refreshes)
-  - Deferred: XP/bit rate edits (need RULES → settings-table refactor), telemetry off switch
+  - **XP/bit rate edits shipped.** `RULES` refactored: `xpPerMessage`/`xpPerOutputTokens`/`bitsPerMessage`/`bitsPerOutputTokens` live in the `meta` table under the `economy:` prefix; defaults apply when no override is set. Settings → Economy section edits each value with bound-checked input + reset-to-defaults. `applyEconomy` calls `getEconomyRules()` per tick so live edits take effect without restart. `RULES.xpForLevel` (the level-up curve formula) stays a const — not user-editable.
+  - Deferred: telemetry off switch
 - [x] Achievements (state-derived milestones):
   - `src/main/achievements.ts` — 16 defs across engagement / progression / evolution / collection / cost / streak tiers; each `check`s a Snapshot built from sessions + pet + unlocks + streak
   - `achievements (id, earned_at)` table; `evaluateAchievements()` is called after applyEconomy / performSpin / performPurchase

@@ -124,6 +124,25 @@ export interface ReceiverInfo {
   grpc: string;
 }
 
+export const ECONOMY_RULE_KEYS = [
+  'xpPerMessage',
+  'xpPerOutputTokens',
+  'bitsPerMessage',
+  'bitsPerOutputTokens',
+] as const;
+export type EconomyRuleKey = (typeof ECONOMY_RULE_KEYS)[number];
+export type EconomyRules = Record<EconomyRuleKey, number>;
+
+export interface EconomyRuleBound {
+  min: number;
+  max: number;
+}
+export type EconomyRuleBounds = Record<EconomyRuleKey, EconomyRuleBound>;
+
+export type EconomyRuleResponse =
+  | { ok: true; rules: EconomyRules }
+  | { error: 'unknown-key' | 'not-integer' | 'out-of-range'; bounds?: EconomyRuleBound };
+
 export type AchievementTier = 'bronze' | 'silver' | 'gold';
 
 export interface AchievementView {
@@ -146,6 +165,9 @@ export interface CodelingApi {
   purchase(itemId: string): Promise<PurchaseResponse>;
   renamePet(name: string): Promise<RenameResponse>;
   setSpinThreshold(n: number): Promise<SpinThresholdResponse>;
+  getEconomyRules(): Promise<{ rules: EconomyRules; bounds: EconomyRuleBounds }>;
+  setEconomyRule(key: EconomyRuleKey, value: number): Promise<EconomyRuleResponse>;
+  resetEconomyRules(): Promise<{ rules: EconomyRules }>;
   setEquipped(itemId: string, equipped: boolean): Promise<{ ok: true } | { error: 'not-owned' }>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;

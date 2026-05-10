@@ -1,5 +1,21 @@
 import { useEffect, useState } from 'react';
-import { SPIN_THRESHOLD_MAX, SPIN_THRESHOLD_MIN, type ReceiverInfo, type SpinState } from '@shared/types';
+import {
+  ECONOMY_RULE_KEYS,
+  SPIN_THRESHOLD_MAX,
+  SPIN_THRESHOLD_MIN,
+  type EconomyRuleBounds,
+  type EconomyRuleKey,
+  type EconomyRules,
+  type ReceiverInfo,
+  type SpinState,
+} from '@shared/types';
+
+const ECONOMY_LABELS: Record<EconomyRuleKey, { label: string; hint: string }> = {
+  xpPerMessage: { label: 'XP per message', hint: 'Earned each user message' },
+  xpPerOutputTokens: { label: 'XP per N output tokens', hint: '1 XP for every N tokens (integer)' },
+  bitsPerMessage: { label: 'Bits per message', hint: 'Earned each user message' },
+  bitsPerOutputTokens: { label: 'Bits per N output tokens', hint: '1 bit for every N tokens (integer)' },
+};
 
 export function Settings() {
   const [spin, setSpin] = useState<SpinState | null>(null);
@@ -10,6 +26,15 @@ export function Settings() {
   const [saveMessage, setSaveMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [economyRules, setEconomyRules] = useState<EconomyRules | null>(null);
+  const [economyBounds, setEconomyBounds] = useState<EconomyRuleBounds | null>(null);
+  const [economyDrafts, setEconomyDrafts] = useState<Record<EconomyRuleKey, string>>({
+    xpPerMessage: '',
+    xpPerOutputTokens: '',
+    bitsPerMessage: '',
+    bitsPerOutputTokens: '',
+  });
+  const [economyError, setEconomyError] = useState<{ key: EconomyRuleKey; text: string } | null>(null);
 
   useEffect(() => {
     const refetch = () => {
@@ -21,6 +46,19 @@ export function Settings() {
     refetch();
     window.codeling.getReceiverInfo().then(setReceiver).catch(console.error);
     window.codeling.getAutoLaunch().then(setAutoLaunch).catch(console.error);
+    window.codeling
+      .getEconomyRules()
+      .then(({ rules, bounds }) => {
+        setEconomyRules(rules);
+        setEconomyBounds(bounds);
+        setEconomyDrafts({
+          xpPerMessage: String(rules.xpPerMessage),
+          xpPerOutputTokens: String(rules.xpPerOutputTokens),
+          bitsPerMessage: String(rules.bitsPerMessage),
+          bitsPerOutputTokens: String(rules.bitsPerOutputTokens),
+        });
+      })
+      .catch(console.error);
     return window.codeling.onUpdate(refetch);
   }, []);
 
@@ -76,6 +114,38 @@ export function Settings() {
     }
   }
 
+  async function commitEconomy(key: EconomyRuleKey) {
+    setEconomyError(null);
+    const n = Number(economyDrafts[key]);
+    if (!Number.isInteger(n)) {
+      setEconomyError({ key, text: 'Whole number required' });
+      return;
+    }
+    if (economyRules && n === economyRules[key]) return; // no-op
+    const res = await window.codeling.setEconomyRule(key, n);
+    if ('ok' in res) {
+      setEconomyRules(res.rules);
+      // Sync drafts in case the runtime clamped/normalized values.
+      setEconomyDrafts((prev) => ({ ...prev, [key]: String(res.rules[key]) }));
+    } else if (res.error === 'out-of-range' && res.bounds) {
+      setEconomyError({ key, text: `Must be between ${res.bounds.min} and ${res.bounds.max}` });
+    } else {
+      setEconomyError({ key, text: 'Invalid value' });
+    }
+  }
+
+  async function handleResetEconomy() {
+    const res = await window.codeling.resetEconomyRules();
+    setEconomyRules(res.rules);
+    setEconomyDrafts({
+      xpPerMessage: String(res.rules.xpPerMessage),
+      xpPerOutputTokens: String(res.rules.xpPerOutputTokens),
+      bitsPerMessage: String(res.rules.bitsPerMessage),
+      bitsPerOutputTokens: String(res.rules.bitsPerOutputTokens),
+    });
+    setEconomyError(null);
+  }
+
   async function performReset() {
     if (resetting) return;
     setResetting(true);
@@ -113,6 +183,59 @@ export function Settings() {
             {thresholdError && <div className="setting-error">{thresholdError}</div>}
           </div>
         </div>
+      </Section>
+
+      <Section title="Economy">
+        {economyRules && economyBounds ? (
+          <>
+            {ECONOMY_RULE_KEYS.map((k) => {
+              const meta = ECONOMY_LABELS[k];
+              const b = economyBounds[k];
+              const err = economyError?.key === k ? economyError : null;
+              return (
+                <div className="setting-row" key={k}>
+                  <div className="setting-row__main">
+                    <div className="setting-row__label">{meta.label}</div>
+                    <div className="setting-row__hint">{meta.hint}</div>
+                  </div>
+                  <div className="setting-row__action">
+                    <input
+                      className="setting-input"
+                      type="number"
+                      min={b.min}
+                      max={b.max}
+                      step={1}
+                      value={economyDrafts[k]}
+                      onChange={(e) =>
+                        setEconomyDrafts((prev) => ({ ...prev, [k]: e.target.value }))
+                      }
+                      onBlur={() => commitEconomy(k)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+                        if (e.key === 'Escape' && economyRules) {
+                          setEconomyDrafts((prev) => ({ ...prev, [k]: String(economyRules[k]) }));
+                        }
+                      }}
+                    />
+                    {err && <div className="setting-error">{err.text}</div>}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="setting-row">
+              <div className="setting-row__main">
+                <div className="setting-row__hint">Restore default rates</div>
+              </div>
+              <div className="setting-row__action">
+                <button className="ghost-btn" onClick={handleResetEconomy}>
+                  Reset to defaults
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="setting-row__hint setting-row__hint--block">Loading…</div>
+        )}
       </Section>
 
       <Section title="Application">

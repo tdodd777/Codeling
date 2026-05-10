@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Economy rates editable via meta table (M5 partial)
+- **Rates live in `meta`, not a dedicated `economy_rules` table.** Reuses the existing key-value table with `economy:<rate>` prefix; no new schema, no migration. Defaults are baked into the code (`ECONOMY_RULE_DEFAULTS`); a missing meta row means "use the default", so users on older saves see the new editable surface immediately.
+- **`getEconomyRules()` runs on every economy tick.** Cheap query (<10 rows of meta on average); avoids any cache-invalidation bug where a Settings edit doesn't propagate. The settings panel mutates DB directly, the next ingest tick reads fresh values.
+- **`xpForLevel` stayed a function const, not editable.** The level-up *curve* is a structural design choice; per-rate tunables (XP per message, etc.) are content tuning. Different concerns. If players ever want a flatter or steeper curve, that's a separate setting (steepness multiplier) — not directly editing the formula.
+- **Bounds enforced on the main side.** `ECONOMY_RULE_BOUNDS` is the source of truth; renderer mirrors via the IPC response so the input's `min`/`max` matches the validator. Matches the `SPIN_THRESHOLD_MIN/MAX` pattern but per-key.
+
 ### 2026-05-10 — Cosmetic equip + overlay composite (M2 partial)
 - **Mutex by category, not slot.** `setEquipped` unequips all other cosmetics in the same category before equipping the new one. Slot-based mutex (head, eye, body) waits until art arrives with explicit slots — premature now with three placeholder cosmetics.
 - **Overlay scan lives next to rotations/animations in the manifest.** `cosmetics/<id>/<direction>.png` mirrors the rest of the sprite layout. Stage-specific overrides work the same way (`stage_<N>/cosmetics/...`) thanks to the existing `speciesStageRoot` fallback.

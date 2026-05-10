@@ -2,6 +2,8 @@ import { app, ipcMain } from 'electron';
 import {
   SPIN_THRESHOLD_MAX,
   SPIN_THRESHOLD_MIN,
+  type EconomyRuleKey,
+  type EconomyRuleResponse,
   type PurchaseResponse,
   type ReceiverInfo,
   type RenameResponse,
@@ -11,6 +13,12 @@ import {
   type SpinThresholdResponse,
 } from '@shared/types';
 import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setEquipped, setSpinThreshold } from './db/repos';
+import {
+  ECONOMY_RULE_BOUNDS,
+  getEconomyRules,
+  resetEconomyRules,
+  setEconomyRule,
+} from './economy';
 import { events } from './events';
 import { notifyUpdate } from './notify';
 import { exportSaveDialog, importSaveDialog } from './save';
@@ -65,6 +73,29 @@ export function registerIpcHandlers(): void {
       }
       throw err;
     }
+  });
+  ipcMain.handle('codeling:getEconomyRules', () => ({
+    rules: getEconomyRules(),
+    bounds: ECONOMY_RULE_BOUNDS,
+  }));
+  ipcMain.handle('codeling:setEconomyRule', (_, key: EconomyRuleKey, raw: unknown): EconomyRuleResponse => {
+    const value = typeof raw === 'number' ? raw : Number(raw);
+    try {
+      const rules = setEconomyRule(key, value);
+      notifyUpdate();
+      return { ok: true, rules };
+    } catch (err) {
+      const reason = (err as Error).message;
+      if (reason === 'unknown-key' || reason === 'not-integer' || reason === 'out-of-range') {
+        return { error: reason, bounds: ECONOMY_RULE_BOUNDS[key] };
+      }
+      throw err;
+    }
+  });
+  ipcMain.handle('codeling:resetEconomyRules', () => {
+    const rules = resetEconomyRules();
+    notifyUpdate();
+    return { rules };
   });
   ipcMain.handle('codeling:setEquipped', (_, itemId: string, equipped: boolean) => {
     const result = setEquipped(itemId, !!equipped);

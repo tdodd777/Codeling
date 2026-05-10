@@ -3,14 +3,76 @@ import { getDb } from './db/client';
 import { events } from './events';
 import { stageForOutputTokens } from './evolution';
 
-// Tunables — central so they're easy to rebalance later from a single place.
-export const RULES = {
+// Editable rate defaults. Live values come from the `meta` table (keys
+// `economy:xpPerMessage`, etc.); defaults apply when no override is set.
+// `xpForLevel` stays a function — it's the level-up curve formula, not a
+// single tunable rate.
+export const ECONOMY_RULE_KEYS = [
+  'xpPerMessage',
+  'xpPerOutputTokens',
+  'bitsPerMessage',
+  'bitsPerOutputTokens',
+] as const;
+export type EconomyRuleKey = (typeof ECONOMY_RULE_KEYS)[number];
+
+export const ECONOMY_RULE_DEFAULTS: Record<EconomyRuleKey, number> = {
   xpPerMessage: 10,
   xpPerOutputTokens: 100, // 1 XP per N output tokens (integer division)
   bitsPerMessage: 5,
   bitsPerOutputTokens: 1000, // 1 bit per N output tokens
+};
+
+// Sane caps. Lower bound > 0 to avoid division-by-zero on the *PerOutputTokens
+// fields and to keep the rates meaningful. Upper bound is wide; tune later.
+export const ECONOMY_RULE_BOUNDS: Record<EconomyRuleKey, { min: number; max: number }> = {
+  xpPerMessage:       { min: 0,  max: 1_000 },
+  xpPerOutputTokens:  { min: 1,  max: 1_000_000 },
+  bitsPerMessage:     { min: 0,  max: 1_000 },
+  bitsPerOutputTokens:{ min: 1,  max: 1_000_000 },
+};
+
+export const RULES = {
   xpForLevel: (level: number) => level * 100, // XP needed to clear level → level+1
 } as const;
+
+export type EconomyRules = Record<EconomyRuleKey, number>;
+
+function metaKey(key: EconomyRuleKey): string {
+  return `economy:${key}`;
+}
+
+export function getEconomyRules(): EconomyRules {
+  const db = getDb();
+  const rows = db
+    .prepare<[], { key: string; value: string }>(
+      `SELECT key, value FROM meta WHERE key LIKE 'economy:%'`,
+    )
+    .all();
+  const overrides = new Map(rows.map((r) => [r.key, r.value]));
+  const out = {} as EconomyRules;
+  for (const k of ECONOMY_RULE_KEYS) {
+    const raw = overrides.get(metaKey(k));
+    const n = raw !== undefined ? Number(raw) : NaN;
+    out[k] = Number.isFinite(n) ? n : ECONOMY_RULE_DEFAULTS[k];
+  }
+  return out;
+}
+
+export function setEconomyRule(key: EconomyRuleKey, value: number): EconomyRules {
+  if (!ECONOMY_RULE_KEYS.includes(key)) throw new Error('unknown-key');
+  if (!Number.isInteger(value)) throw new Error('not-integer');
+  const { min, max } = ECONOMY_RULE_BOUNDS[key];
+  if (value < min || value > max) throw new Error('out-of-range');
+  getDb()
+    .prepare<[string, string]>(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`)
+    .run(metaKey(key), String(value));
+  return getEconomyRules();
+}
+
+export function resetEconomyRules(): EconomyRules {
+  getDb().prepare(`DELETE FROM meta WHERE key LIKE 'economy:%'`).run();
+  return getEconomyRules();
+}
 
 export interface RewardDeltas {
   messages: number;
@@ -53,12 +115,13 @@ export function applyEconomy(d: RewardDeltas): EconomyResult {
   };
   if (d.messages <= 0 && d.outputTokens <= 0) return result;
 
+  const rules = getEconomyRules();
   const xpGained =
-    d.messages * RULES.xpPerMessage +
-    Math.floor(d.outputTokens / RULES.xpPerOutputTokens);
+    d.messages * rules.xpPerMessage +
+    Math.floor(d.outputTokens / rules.xpPerOutputTokens);
   let bitsGained =
-    d.messages * RULES.bitsPerMessage +
-    Math.floor(d.outputTokens / RULES.bitsPerOutputTokens);
+    d.messages * rules.bitsPerMessage +
+    Math.floor(d.outputTokens / rules.bitsPerOutputTokens);
 
   if (xpGained === 0 && bitsGained === 0 && d.messages === 0) return result;
 
