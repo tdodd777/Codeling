@@ -149,6 +149,88 @@ html, body, #root {
   font-size: 14px;
 }
 
+.spin-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* --- Spin reveal toast --- */
+
+@keyframes spin-toast-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin-toast-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.spin-toast-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 20, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: spin-toast-fade 160ms ease-out;
+}
+
+.spin-toast {
+  background: var(--bg-elev);
+  border: 2px solid var(--accent-dim);
+  border-radius: 14px;
+  padding: 22px 28px;
+  text-align: center;
+  min-width: 220px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  animation: spin-toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1.2);
+}
+
+.spin-toast__tier {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.spin-toast__label {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--fg);
+}
+
+.spin-toast__detail {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.spin-toast__close {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.spin-toast--common      { border-color: #4a4868; }
+.spin-toast--uncommon    { border-color: #4d8c5a; box-shadow: 0 12px 30px rgba(77, 140, 90, 0.25); }
+.spin-toast--rare        { border-color: #5e7fc7; box-shadow: 0 12px 30px rgba(94, 127, 199, 0.3); }
+.spin-toast--legendary   { border-color: #d6a23a; box-shadow: 0 12px 30px rgba(214, 162, 58, 0.4); }
+
+.spin-toast--common      .spin-toast__tier { color: #8c83a8; }
+.spin-toast--uncommon    .spin-toast__tier { color: #6dc685; }
+.spin-toast--rare        .spin-toast__tier { color: #8caaee; }
+.spin-toast--legendary   .spin-toast__tier { color: #f0c75e; }
+
 /* --- Shop --- */
 
 .subtabs {
@@ -178,6 +260,49 @@ html, body, #root {
   text-align: center;
   padding: 32px 0;
 }
+
+.shop-section-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.owned-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.owned-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.owned-item__tier {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.owned-item--common      { border-left-color: #4a4868; }
+.owned-item--uncommon    { border-left-color: #6dc685; }
+.owned-item--rare        { border-left-color: #8caaee; }
+.owned-item--legendary   { border-left-color: #f0c75e; }
+.owned-item--legendary .owned-item__label { color: #f0c75e; }
 
 /* --- Stats --- */
 

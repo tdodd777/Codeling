@@ -101,6 +101,13 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Spin reward shape (M1.1)
+- **Single weighted catalog, three reward kinds.** `bits` / `xp` / `cosmetic`. No `multiplier` kind yet — defers until shop upgrades land in M1.4 so the multiplier-stacking semantics get designed in one place rather than retrofitted.
+- **Tiers (`common`/`uncommon`/`rare`/`legendary`) drive both UI and consolation amounts.** Visual treatment in the toast and in the Shop's "Owned" list keys off `tier`. When a cosmetic roll lands on something the pet already owns, the player gets `CONSOLATION_BITS[tier]` instead — duplicate-protection that scales so a duplicated legendary still feels meaningful.
+- **`COSMETICS` is the cosmetic registry, separate from the reward draw table.** Reward defs reference cosmetics by `cosmeticId`; the registry maps `cosmeticId` → `{ label, tier }`. The `unlocks` table stores `item_id = cosmeticId`. `getUnlocks()` resolves through the registry, so Shop labels survive cosmetic rebalances and renames live in one place.
+- **Atomicity via single SQLite txn in `performSpin()`.** Decrement spins_available → draw → mutate pet/unlocks → return. PRIMARY KEY conflict on duplicate cosmetic detected via `INSERT OR IGNORE` + `changes === 0`. No partial state if anything throws.
+- **Spin handler broadcasts `codeling:update`.** Same channel ingest uses, so Home re-fetches pet (bits/level/xp) and Shop re-fetches unlocks without a separate IPC.
+
 ---
 
 ## Deferred / backlog
@@ -116,8 +123,6 @@ Roughly ordered by impact for the next iteration.
 - **Until then**: ship a `scripts/install-telemetry.{ps1,sh}` that just handles the env-var step. Documented as a temporary workaround.
 
 ### Game loop
-- **Spin wheel logic** — RNG, reward tables, animation. Currently the button just shows the spin count; clicking does nothing.
-- **Reward catalog** — cosmetics list with tiers, drop weights, wheel-exclusive flags
 - **Evolution thresholds** — token milestones per species; auto-evolve on cross
 - **Achievements / streaks** — daily streak, lifetime totals milestones
 - **Cost tracking** — `claude_code.cost.usage` is being received but ignored. Add a `cost_usd` column to `sessions`.

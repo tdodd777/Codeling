@@ -45,6 +45,13 @@ Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
 - [x] `DIRECTION.md` (decisions log + backlog) and `README.md` (developer-facing) in place
 - [x] `.gitignore` covers `node_modules/`, `.vite/`, `out/`, `*.db`, `.env`
 
+### M1.1 — Spin wheel logic
+- [x] Spin reward catalog (`src/main/spin/rewards.ts`): bits/xp/cosmetic with tier + weight; cosmetic registry (`COSMETICS`) keyed by `unlocks.item_id`; consolation bits per tier
+- [x] Weighted draw helper (`drawReward`) with injectable RNG
+- [x] IPC `codeling:spin()` — atomic txn decrements `spins_available`, draws reward, applies effect; duplicate cosmetic falls back to consolation bits
+- [x] `getUnlocks()` repo + `codeling:getUnlocks` IPC; spin handler calls `notifyUpdate()` so Home/Shop refresh
+- [x] Home tab wires the button; tier-styled reveal toast (backdrop, click-or-3.5s dismiss); Shop "Owned" section renders cosmetics with rarity accent
+
 ---
 
 ## In progress
@@ -56,14 +63,6 @@ _Nothing currently mid-flight._
 ## M1 — Game loop alive (next up)
 
 Goal: every visible UI element does something real. After M1, the app is a complete (if minimal) game.
-
-### M1.1 — Spin wheel logic
-- [ ] Spin reward catalog (`src/main/spin/rewards.ts`): list of items with `id`, `kind` (cosmetic/bits/xp/multiplier), `weight`, `tier`
-- [ ] RNG + weighted draw helper
-- [ ] IPC `codeling:spin()` — atomically decrements `spins_available`, draws reward, applies effect (insert into `unlocks` for cosmetics; bump `pet.bits`/`pet.xp` for currency drops)
-- [ ] Wire spin button on Home tab to call IPC, animate result reveal (CSS transition or simple fade-in)
-- [ ] Coalesce broadcast so panel refreshes pet + new unlock list
-- **Acceptance**: Click spin button → see reward toast → spin counter decrements → if cosmetic, appears in shop's owned section
 
 ### M1.2 — Evolution thresholds
 - [ ] Per-species evolution table (token thresholds → `evolution_stage`): `EVOLUTIONS: Record<Species, number[]>`

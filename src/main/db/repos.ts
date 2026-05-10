@@ -1,5 +1,6 @@
-import type { LifetimeStats, PetState, SignalType, SpinState, Transport } from '@shared/types';
+import type { LifetimeStats, PetState, SignalType, SpinState, Transport, UnlockedItem } from '@shared/types';
 import type { SessionField, SessionOp } from '../otel/aggregator';
+import { COSMETICS } from '../spin/rewards';
 import { getDb } from './client';
 
 const VALID_FIELDS: ReadonlySet<SessionField> = new Set([
@@ -79,6 +80,34 @@ export function getLifetimeStats(): LifetimeStats {
     totalCacheCreationTokens: row?.total_cache_create ?? 0,
     sessionCount: row?.session_count ?? 0,
   };
+}
+
+interface UnlockRow {
+  item_id: string;
+  category: string;
+  acquired_via: string;
+  acquired_at: number;
+  equipped: number;
+}
+
+export function getUnlocks(): UnlockedItem[] {
+  const rows = getDb()
+    .prepare<[], UnlockRow>(`SELECT * FROM unlocks ORDER BY acquired_at DESC`)
+    .all();
+  return rows.map((r) => {
+    // Cosmetic catalog is the source of truth for label/tier; if an item somehow
+    // lands here without a registry entry (legacy save?), fall back gracefully.
+    const def = COSMETICS[r.item_id];
+    return {
+      itemId: r.item_id,
+      category: r.category,
+      acquiredVia: r.acquired_via,
+      acquiredAt: r.acquired_at,
+      equipped: r.equipped !== 0,
+      label: def?.label ?? r.item_id,
+      tier: def?.tier ?? 'common',
+    };
+  });
 }
 
 export function recordOtelEvent(

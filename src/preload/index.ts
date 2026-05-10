@@ -8,6 +8,8 @@ const api: CodelingApi = {
   getSpinState: () => ipcRenderer.invoke('codeling:getSpinState'),
   getStats: () => ipcRenderer.invoke('codeling:getStats'),
   getSprites: (species) => ipcRenderer.invoke('codeling:getSprites', species),
+  getUnlocks: () => ipcRenderer.invoke('codeling:getUnlocks'),
+  spin: () => ipcRenderer.invoke('codeling:spin'),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);
