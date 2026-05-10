@@ -1,4 +1,4 @@
-import type { LifetimeStats, PetState, SignalType, SpinState, Transport, UnlockedItem } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
 import type { SessionField, SessionOp } from '../otel/aggregator';
 import { COSMETICS } from '../spin/rewards';
 import { getDb } from './client';
@@ -40,6 +40,17 @@ export function getPet(): PetState {
     bits: row.bits,
     createdAt: row.created_at,
   };
+}
+
+// Constraints: trim outer whitespace, reject empty, cap at PET_NAME_MAX_LENGTH.
+// Returns the canonical name actually written, or throws if invalid — callers
+// surface the error as a renderer-side validation message.
+export function renamePet(name: string): string {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) throw new Error('empty-name');
+  if (trimmed.length > PET_NAME_MAX_LENGTH) throw new Error('name-too-long');
+  getDb().prepare<[string]>(`UPDATE pet SET name = ? WHERE id = 1`).run(trimmed);
+  return trimmed;
 }
 
 export function getSpinState(): SpinState {

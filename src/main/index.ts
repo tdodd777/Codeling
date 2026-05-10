@@ -13,6 +13,19 @@ import { startGrpcReceiver } from './otel/grpc-receiver';
 const TRAY_TARGET_PX = 40;
 const TRAY_FPS = 4;
 
+// Per-species head-crop fraction. Humanoid silhouettes (wizard) read well as
+// just hat + face; rounder pets (slime) need more body in frame; mechanical
+// pets (robot) tend to have the most distinctive feature lower down so we
+// take the whole sprite.
+//
+// Tune once each species' real art lands — the slime/robot values are
+// placeholders, picked so the tray scan won't break before you can iterate.
+const TRAY_HEAD_FRACTION: Record<Species, number> = {
+  wizard: 0.55,
+  slime: 0.85,
+  robot: 1.0,
+};
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
@@ -60,14 +73,16 @@ function takeTop(img: NativeImage, fraction: number): NativeImage {
   return img.crop({ x: 0, y: 0, width, height: h });
 }
 
-function processForTray(img: NativeImage): NativeImage {
+function processForTray(img: NativeImage, species: Species): NativeImage {
   // 1. Crop the source to its visible bounding box (PixelLab pads heavily).
-  // 2. Take just the top portion — Windows tray slot is too small to read a
-  //    full body, so we focus on the most distinctive bits (hat + face).
+  // 2. Take the top fraction tuned for the species silhouette — Windows tray
+  //    slot is too small to read a full humanoid body, but a slime is mostly
+  //    head, and a robot's body is its most distinctive bit.
   // 3. Re-crop content in case the top portion introduced new whitespace
   //    (e.g., a peaked hat with empty shoulders below it).
   // 4. Resize so the longest dim hits TRAY_TARGET_PX, preserving aspect.
-  const headOnly = cropToContent(takeTop(cropToContent(img), 0.55));
+  const fraction = TRAY_HEAD_FRACTION[species] ?? 0.55;
+  const headOnly = cropToContent(takeTop(cropToContent(img), fraction));
   if (process.platform !== 'win32') return headOnly;
   const { width: cw, height: ch } = headOnly.getSize();
   const ratio = TRAY_TARGET_PX / Math.max(cw, ch, 1);
@@ -98,7 +113,7 @@ function trayIcon(): NativeImage {
     const root = spriteStageDir(pet.species, pet.evolutionStage);
     const speciesIcon = path.join(root, 'rotations', 'south.png');
     if (fs.existsSync(speciesIcon)) {
-      return processForTray(nativeImage.createFromPath(speciesIcon));
+      return processForTray(nativeImage.createFromPath(speciesIcon), pet.species);
     }
   } catch {
     // Pet row not seeded yet — fall through to brand placeholder.
@@ -125,7 +140,7 @@ function buildIdleTrayFrames(species: Species, stage: number): NativeImage[] {
     .readdirSync(southDir)
     .filter((f) => f.toLowerCase().endsWith('.png'))
     .sort();
-  return files.map((f) => processForTray(nativeImage.createFromPath(path.join(southDir, f))));
+  return files.map((f) => processForTray(nativeImage.createFromPath(path.join(southDir, f)), species));
 }
 
 function rendererIndex(): string {
@@ -154,10 +169,20 @@ async function bootstrap() {
   startHttpReceiver().catch((err) => console.error('[otel:http] failed to start', err));
   startGrpcReceiver().catch((err) => console.error('[otel:grpc] failed to start', err));
 
+  // Tooltip shows the pet's name so the user can identify which pet is theirs
+  // when multiple Codeling-style apps live in the tray. Falls back to brand if
+  // pet row isn't ready (first run before seed completes).
+  let initialTooltip = 'Codeling';
+  try {
+    initialTooltip = `Codeling — ${getPet().name}`;
+  } catch {
+    // pet not seeded yet
+  }
+
   const mb = menubar({
     index: rendererIndex(),
     icon: trayIcon(),
-    tooltip: 'Codeling',
+    tooltip: initialTooltip,
     showDockIcon: false,
     preloadWindow: true,
     browserWindow: {
@@ -228,6 +253,12 @@ async function bootstrap() {
   events.on('pet:evolved', (e) => {
     console.log(`[tray] pet evolved ${e.species} stage_${e.fromStage} → stage_${e.toStage}; refreshing`);
     startTrayAnimation();
+  });
+
+  events.on('pet:renamed', (e) => {
+    if (mb.tray && !mb.tray.isDestroyed()) {
+      mb.tray.setToolTip(`Codeling — ${e.name}`);
+    }
   });
 
   app.on('before-quit', () => {

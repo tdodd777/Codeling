@@ -95,14 +95,16 @@ Goal: every visible UI element does something real. After M1, the app is a compl
 
 ## M2 — Multi-species + visual polish
 
-- [ ] Slime/blob species sprites (PixelLab Character Creator export → `assets/sprites/slime/`)
-- [ ] Robot species sprites → `assets/sprites/robot/`
-- [ ] Per-species `TRAY_HEAD_FRACTION` map (slime probably wants 0.7+, robot may need full body)
-- [ ] First-launch starter randomizer (replace hardcoded `wizard` seed)
-- [ ] Silhouette reveal animation on starter assignment
-- [ ] Pet rename UI (small input on Home tab, IPC `codeling:renamePet`)
+Code-only items shipped; the rest is gated on art landing in `assets/sprites/`.
+
+- [ ] Slime/blob species sprites (PixelLab Character Creator export → `assets/sprites/slime/`) — **HUMAN.md**
+- [ ] Robot species sprites → `assets/sprites/robot/` — **HUMAN.md**
+- [x] Per-species `TRAY_HEAD_FRACTION: Record<Species, number>` (`src/main/index.ts`): `wizard: 0.55`, `slime: 0.85`, `robot: 1.0`. `processForTray(img, species)` reads the fraction; slime/robot values are placeholders to tune once art lands.
+- [ ] First-launch starter randomizer (replace hardcoded `wizard` seed) — **blocked on slime + robot art**
+- [ ] Silhouette reveal animation on starter assignment — **blocked on starter randomizer**
+- [x] Pet rename UI: click `pet-name` on Home → inline input (`PetNameEdit` in `Home.tsx`); IPC `codeling:renamePet(name)` validates 1-`PET_NAME_MAX_LENGTH` chars trimmed, returns distinct `empty-name`/`name-too-long` error codes. Tray tooltip updates via new `pet:renamed` event.
 - [ ] Other-direction sprite usage: stage shows pet facing toward whichever side made it gain XP last? (TBD — pick something fun)
-- [ ] Cosmetic equip/render: equipped accessories composited over base sprite at runtime (CSS `position: absolute` over `<PetSprite>`, or canvas-based compositor)
+- [ ] Cosmetic equip/render: equipped accessories composited over base sprite at runtime (CSS `position: absolute` over `<PetSprite>`, or canvas-based compositor) — **blocked on overlay art**
 
 ---
 

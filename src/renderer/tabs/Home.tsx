@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PetState, SpinResponse, SpinResult, SpinState, SpriteManifest } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest } from '@shared/types';
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
@@ -98,7 +98,7 @@ export function Home() {
       </div>
 
       <div className="pet-meta">
-        <div className="pet-name">{pet.name}</div>
+        <PetNameEdit currentName={pet.name} />
         <div className="pet-level">Lv {pet.level}</div>
         <div className="xp-bar">
           <div className="xp-bar__fill" style={{ width: `${xpPct}%` }} />
@@ -131,6 +131,86 @@ export function Home() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PetNameEdit({ currentName }: { currentName: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(currentName);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync draft when external updates change the name (e.g., another window).
+  useEffect(() => {
+    if (!editing) setDraft(currentName);
+  }, [currentName, editing]);
+
+  function startEdit() {
+    setDraft(currentName);
+    setError(null);
+    setEditing(true);
+    // Focus + select happens after the input mounts.
+    queueMicrotask(() => inputRef.current?.select());
+  }
+
+  async function commit() {
+    const next = draft.trim();
+    if (next === currentName) {
+      setEditing(false);
+      return;
+    }
+    if (next.length === 0) {
+      setError('Name required');
+      return;
+    }
+    const res = await window.codeling.renamePet(next);
+    if ('ok' in res) {
+      setError(null);
+      setEditing(false);
+    } else {
+      setError(res.error === 'name-too-long' ? `Max ${PET_NAME_MAX_LENGTH} chars` : 'Name required');
+    }
+  }
+
+  function cancel() {
+    setDraft(currentName);
+    setError(null);
+    setEditing(false);
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="pet-name pet-name--button"
+        onClick={startEdit}
+        title="Click to rename"
+      >
+        {currentName}
+      </button>
+    );
+  }
+
+  return (
+    <div className="pet-name-edit">
+      <input
+        ref={inputRef}
+        className="pet-name-input"
+        value={draft}
+        maxLength={PET_NAME_MAX_LENGTH}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          if (error) setError(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          else if (e.key === 'Escape') cancel();
+        }}
+        onBlur={commit}
+        autoFocus
+      />
+      {error && <div className="pet-name-error">{error}</div>}
     </div>
   );
 }

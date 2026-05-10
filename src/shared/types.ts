@@ -102,6 +102,12 @@ export type PurchaseResponse =
   | { error: 'insufficient'; bits: number; price: number }
   | { error: 'already-owned' };
 
+export type RenameResponse =
+  | { ok: true; name: string }
+  | { error: 'empty-name' | 'name-too-long' };
+
+export const PET_NAME_MAX_LENGTH = 32;
+
 export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
@@ -111,6 +117,7 @@ export interface CodelingApi {
   getShopItems(): Promise<ShopItemView[]>;
   spin(): Promise<SpinResponse>;
   purchase(itemId: string): Promise<PurchaseResponse>;
+  renamePet(name: string): Promise<RenameResponse>;
   onUpdate(cb: () => void): () => void;
 }
 

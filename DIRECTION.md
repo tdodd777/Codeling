@@ -101,6 +101,11 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Multi-species scaffolding (M2 partial)
+- **Pet rename uses an event, not the broadcast channel, for the tray tooltip.** `pet:renamed` on the in-process emitter; tray subscribes and calls `tray.setToolTip()`. Renderer-broadcast `codeling:update` already fires for the panel refresh — keeping tray-tooltip plumbing on the main-process emitter avoids reading the DB on every renderer-update tick (most don't change the name).
+- **Per-species `TRAY_HEAD_FRACTION` is a small flat record, intentionally not a per-stage thing.** Stage rarely changes the silhouette enough to warrant per-stage tuning; if it does (e.g., wizard stage 3 grows wings), introduce a per-(species, stage) map then. Premature for now — three flat values cover the planned roster.
+- **`PET_NAME_MAX_LENGTH` lives in `shared/types.ts` so renderer and main share the cap.** Repo enforces it; renderer's `<input maxLength>` plus inline validation give immediate feedback. Errors round-trip as discrete codes (`empty-name` / `name-too-long`) — not human-readable strings — so the renderer owns localization later.
+
 ### 2026-05-10 — Pet-stage scenery (M1.5)
 - **Background lives in the manifest, not as a separate IPC.** `SpriteManifest.background` is populated by `findBackground` during the same scan that builds rotations/animations. Renderer fetches once per `(species, stage)` change. Keeping it in the manifest means future per-stage scenery (apprentice → archmage tower) lands automatically without touching the renderer.
 - **Stage-specific scenery wins over species default.** `assets/sprites/<species>/stage_<N>/background.png` overrides `assets/sprites/<species>/background.png`. Mirrors the rotations/animations precedence rule — same mental model across all PNG kinds.

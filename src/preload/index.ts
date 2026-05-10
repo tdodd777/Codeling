@@ -12,6 +12,7 @@ const api: CodelingApi = {
   getShopItems: () => ipcRenderer.invoke('codeling:getShopItems'),
   spin: () => ipcRenderer.invoke('codeling:spin'),
   purchase: (itemId) => ipcRenderer.invoke('codeling:purchase', itemId),
+  renamePet: (name) => ipcRenderer.invoke('codeling:renamePet', name),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
-import type { PurchaseResponse, ShopItemView, Species, SpinResponse } from '@shared/types';
-import { getLifetimeStats, getPet, getSpinState, getUnlocks } from './db/repos';
+import type { PurchaseResponse, RenameResponse, ShopItemView, Species, SpinResponse } from '@shared/types';
+import { getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet } from './db/repos';
+import { events } from './events';
 import { notifyUpdate } from './notify';
 import { SHOP_ITEMS } from './shop/catalog';
 import { performPurchase } from './shop';
@@ -38,5 +39,20 @@ export function registerIpcHandlers(): void {
     const result = performPurchase(itemId);
     if ('ok' in result) notifyUpdate();
     return result;
+  });
+  ipcMain.handle('codeling:renamePet', (_, name: string): RenameResponse => {
+    if (typeof name !== 'string') return { error: 'empty-name' };
+    try {
+      const written = renamePet(name);
+      events.emit('pet:renamed', { name: written });
+      notifyUpdate();
+      return { ok: true, name: written };
+    } catch (err) {
+      const reason = (err as Error).message;
+      if (reason === 'empty-name' || reason === 'name-too-long') {
+        return { error: reason };
+      }
+      throw err;
+    }
   });
 }

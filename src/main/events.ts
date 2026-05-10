@@ -11,8 +11,13 @@ export interface PetEvolvedEvent {
   toStage: number;
 }
 
+export interface PetRenamedEvent {
+  name: string;
+}
+
 interface EventMap {
   'pet:evolved': [PetEvolvedEvent];
+  'pet:renamed': [PetRenamedEvent];
 }
 
 class TypedEmitter extends EventEmitter {
