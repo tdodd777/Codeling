@@ -1,7 +1,7 @@
-import { PET_NAME_MAX_LENGTH, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, SPIN_THRESHOLD_MAX, SPIN_THRESHOLD_MIN, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
 import type { SessionField, SessionOp } from '../otel/aggregator';
 import { COSMETICS } from '../spin/rewards';
-import { getDb } from './client';
+import { getDb, seedDefaults } from './client';
 
 const VALID_FIELDS: ReadonlySet<SessionField> = new Set([
   'message_count',
@@ -40,6 +40,30 @@ export function getPet(): PetState {
     bits: row.bits,
     createdAt: row.created_at,
   };
+}
+
+// Spin threshold range constants live in shared/types.ts so renderer + main agree.
+// Below 5 turns spins into spam; above 1000 makes the wheel feel unreachable.
+export function setSpinThreshold(n: number): number {
+  if (!Number.isFinite(n) || !Number.isInteger(n)) throw new Error('not-integer');
+  if (n < SPIN_THRESHOLD_MIN || n > SPIN_THRESHOLD_MAX) throw new Error('out-of-range');
+  getDb().prepare<[number]>(`UPDATE spin_state SET spin_threshold = ? WHERE id = 1`).run(n);
+  return n;
+}
+
+// Wipe everything except schema, then re-seed defaults. Atomic — if anything
+// throws mid-wipe the user's save stays intact.
+export function resetSave(): void {
+  const db = getDb();
+  const tx = db.transaction(() => {
+    db.exec(`DELETE FROM otel_events`);
+    db.exec(`DELETE FROM unlocks`);
+    db.exec(`DELETE FROM sessions`);
+    db.exec(`DELETE FROM spin_state`);
+    db.exec(`DELETE FROM pet`);
+    seedDefaults(db);
+  });
+  tx();
 }
 
 // Constraints: trim outer whitespace, reject empty, cap at PET_NAME_MAX_LENGTH.

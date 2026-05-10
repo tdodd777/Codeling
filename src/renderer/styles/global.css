@@ -438,6 +438,176 @@ html, body, #root {
 .shop-item--legendary   { border-left-color: #f0c75e; }
 .shop-item--legendary .shop-item__label { color: #f0c75e; }
 
+/* --- Settings --- */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.settings-section__body {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 0;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-row--info {
+  font-size: 12px;
+}
+
+.setting-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-row__label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.setting-row__hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.setting-row__hint--block {
+  padding: 6px 12px 10px;
+}
+
+.setting-row__hint code {
+  background: var(--border);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.setting-row__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.setting-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  width: 80px;
+}
+
+.setting-input:focus {
+  border-color: var(--accent);
+}
+
+.setting-error {
+  font-size: 10px;
+  color: #d68a8a;
+}
+
+.setting-code {
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.danger-btn {
+  background: transparent;
+  border: 1px solid #b25555;
+  color: #d68a8a;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 8px 12px;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: rgba(178, 85, 85, 0.15);
+}
+
+.danger-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ghost-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ghost-btn:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--accent-dim);
+}
+
+.danger-confirm {
+  padding: 10px 12px 4px;
+}
+
+.danger-confirm__msg {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+
+.danger-confirm__msg strong {
+  color: #d68a8a;
+  font-weight: 600;
+}
+
+.danger-confirm__actions {
+  display: flex;
+  gap: 8px;
+  margin: 0 -12px 0 0;
+}
+
+.danger-confirm__actions .danger-btn {
+  margin: 0;
+}
+
 /* --- Stats --- */
 
 .stats-row {

@@ -108,6 +108,18 @@ export type RenameResponse =
 
 export const PET_NAME_MAX_LENGTH = 32;
 
+export type SpinThresholdResponse =
+  | { ok: true; value: number }
+  | { error: 'not-integer' | 'out-of-range'; min: number; max: number };
+
+export const SPIN_THRESHOLD_MIN = 5;
+export const SPIN_THRESHOLD_MAX = 1000;
+
+export interface ReceiverInfo {
+  http: string;
+  grpc: string;
+}
+
 export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
@@ -118,6 +130,9 @@ export interface CodelingApi {
   spin(): Promise<SpinResponse>;
   purchase(itemId: string): Promise<PurchaseResponse>;
   renamePet(name: string): Promise<RenameResponse>;
+  setSpinThreshold(n: number): Promise<SpinThresholdResponse>;
+  resetSave(): Promise<{ ok: true }>;
+  getReceiverInfo(): Promise<ReceiverInfo>;
   onUpdate(cb: () => void): () => void;
 }
 

@@ -18,6 +18,7 @@ export interface PetRenamedEvent {
 interface EventMap {
   'pet:evolved': [PetEvolvedEvent];
   'pet:renamed': [PetRenamedEvent];
+  'pet:reset': [];
 }
 
 class TypedEmitter extends EventEmitter {

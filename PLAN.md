@@ -140,7 +140,11 @@ This is the make-or-break adoption flow. Build it once the game is fun enough to
 
 ## M5 — Polish
 
-- [ ] Settings panel: spin threshold, XP/bit rates (with sane caps), telemetry off switch, reset save
+- [x] Settings panel (4th tab):
+  - Spin threshold inline numeric input (`SPIN_THRESHOLD_MIN`–`SPIN_THRESHOLD_MAX` range; commit on blur/Enter; per-row error)
+  - Receiver section: read-only HTTP/gRPC endpoints + pointer to install scripts
+  - Danger zone: Reset save (atomic txn wipes pet/sessions/unlocks/spin_state/otel_events, re-seeds defaults, fires `pet:reset` + `pet:renamed` so tray refreshes)
+  - Deferred: XP/bit rate edits (need RULES → settings-table refactor), telemetry off switch
 - [ ] Achievements / streaks: daily streak, milestone notifications via tray balloon
 - [ ] Export / import save (JSON dump of pet + unlocks + sessions, for moving between machines)
 - [ ] Multi-machine sync (only if there's user demand — implies an account/server)

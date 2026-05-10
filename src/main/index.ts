@@ -255,6 +255,11 @@ async function bootstrap() {
     startTrayAnimation();
   });
 
+  events.on('pet:reset', () => {
+    console.log('[tray] save reset; refreshing tray');
+    startTrayAnimation();
+  });
+
   events.on('pet:renamed', (e) => {
     if (mb.tray && !mb.tray.isDestroyed()) {
       mb.tray.setToolTip(`Codeling — ${e.name}`);

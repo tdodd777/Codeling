@@ -1,6 +1,16 @@
 import { ipcMain } from 'electron';
-import type { PurchaseResponse, RenameResponse, ShopItemView, Species, SpinResponse } from '@shared/types';
-import { getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet } from './db/repos';
+import {
+  SPIN_THRESHOLD_MAX,
+  SPIN_THRESHOLD_MIN,
+  type PurchaseResponse,
+  type ReceiverInfo,
+  type RenameResponse,
+  type ShopItemView,
+  type Species,
+  type SpinResponse,
+  type SpinThresholdResponse,
+} from '@shared/types';
+import { getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setSpinThreshold } from './db/repos';
 import { events } from './events';
 import { notifyUpdate } from './notify';
 import { SHOP_ITEMS } from './shop/catalog';
@@ -40,6 +50,31 @@ export function registerIpcHandlers(): void {
     if ('ok' in result) notifyUpdate();
     return result;
   });
+  ipcMain.handle('codeling:setSpinThreshold', (_, raw: unknown): SpinThresholdResponse => {
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    try {
+      const written = setSpinThreshold(n);
+      notifyUpdate();
+      return { ok: true, value: written };
+    } catch (err) {
+      const reason = (err as Error).message;
+      if (reason === 'not-integer' || reason === 'out-of-range') {
+        return { error: reason, min: SPIN_THRESHOLD_MIN, max: SPIN_THRESHOLD_MAX };
+      }
+      throw err;
+    }
+  });
+  ipcMain.handle('codeling:resetSave', (): { ok: true } => {
+    resetSave();
+    events.emit('pet:reset');
+    events.emit('pet:renamed', { name: 'Wizard' });
+    notifyUpdate();
+    return { ok: true };
+  });
+  ipcMain.handle('codeling:getReceiverInfo', (): ReceiverInfo => ({
+    http: 'http://127.0.0.1:4318',
+    grpc: 'http://127.0.0.1:4317',
+  }));
   ipcMain.handle('codeling:renamePet', (_, name: string): RenameResponse => {
     if (typeof name !== 'string') return { error: 'empty-name' };
     try {

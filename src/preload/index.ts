@@ -13,6 +13,9 @@ const api: CodelingApi = {
   spin: () => ipcRenderer.invoke('codeling:spin'),
   purchase: (itemId) => ipcRenderer.invoke('codeling:purchase', itemId),
   renamePet: (name) => ipcRenderer.invoke('codeling:renamePet', name),
+  setSpinThreshold: (n) => ipcRenderer.invoke('codeling:setSpinThreshold', n),
+  resetSave: () => ipcRenderer.invoke('codeling:resetSave'),
+  getReceiverInfo: () => ipcRenderer.invoke('codeling:getReceiverInfo'),
   onUpdate: (cb) => {
     const handler = () => cb();
     ipcRenderer.on(UPDATE_CHANNEL, handler);

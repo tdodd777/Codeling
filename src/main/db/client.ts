@@ -15,7 +15,7 @@ export function getDb(): Database.Database {
 
   db.exec(schemaSql);
   runMigrations(db);
-  seedIfEmpty(db);
+  seedDefaults(db);
 
   return db;
 }
@@ -30,7 +30,10 @@ function runMigrations(d: Database.Database): void {
   }
 }
 
-function seedIfEmpty(d: Database.Database): void {
+// Insert default pet + spin_state rows if missing. Exported so reset-save can
+// re-seed after wiping all rows; INSERT OR IGNORE keeps it safe to call any
+// time the DB is in an unknown state.
+export function seedDefaults(d: Database.Database): void {
   const now = Date.now();
 
   // Default starter is the wizard so the bundled south sprite renders out of the box.

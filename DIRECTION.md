@@ -101,6 +101,12 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Settings panel (M5 partial)
+- **Reset save is `DELETE * FROM <table> + seedDefaults` inside a single txn.** Extracted `seedDefaults` from `client.ts`'s init path so re-seeding doesn't duplicate logic. Atomic — if any DELETE throws, the user's save is intact. After-effects (`pet:reset` + `pet:renamed` events) fire *outside* the txn so tray refresh and tooltip update don't run while holding the SQLite write lock.
+- **Spin threshold range constants live in `shared/types.ts`.** Same pattern as `PET_NAME_MAX_LENGTH` — single source for both `<input min/max>` validation in the renderer and the repo's range-check. Renderer keeps its own draft state so user edits don't lose focus while typing; commits on blur or Enter.
+- **Telemetry off switch + XP/bit rate editing deferred.** "Off switch" needs receiver shutdown semantics (port lifecycle); rate editing needs `RULES` to be DB-backed instead of a const. Both are settings-panel scope creep — settings panel as shipped is small enough to ship now and unblocks balance playtesting (HUMAN.md).
+- **`pet:reset` event added rather than overloading `pet:evolved` with a synthetic stage transition.** Tray subscribes to both to rebuild frames; honest event name beats clever payload.
+
 ### 2026-05-10 — Interim telemetry installer scripts (M3.1)
 - **Two scripts, not one cross-platform Node CLI.** `.ps1` for Windows, `.sh` for macOS/Linux. Each is small, no dependencies, and exercises the platform-native mechanism users expect (PowerShell User-scope env vars vs. shell rc files). Bundled `npx codeling install` will eventually wrap these, but the scripts stand alone for early-stage installs.
 - **POSIX writes a marked block, not loose lines.** `# >>> codeling-telemetry >>>` / `# <<< codeling-telemetry <<<` markers around the exports. Uninstall is a single `sed` deletion against the marker pair — surgical, never clobbers user edits to other rc lines. Same convention will apply to the future Stop-hook installer that writes into `~/.claude/settings.json`.

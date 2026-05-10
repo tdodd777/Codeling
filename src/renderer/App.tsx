@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Home } from './tabs/Home';
+import { Settings } from './tabs/Settings';
 import { Shop } from './tabs/Shop';
 import { Stats } from './tabs/Stats';
 
-type Tab = 'home' | 'shop' | 'stats';
+type Tab = 'home' | 'shop' | 'stats' | 'settings';
 
 const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
   { id: 'home', label: 'Home' },
   { id: 'shop', label: 'Shop' },
   { id: 'stats', label: 'Stats' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export function App() {
@@ -31,6 +33,7 @@ export function App() {
         {tab === 'home' && <Home />}
         {tab === 'shop' && <Shop />}
         {tab === 'stats' && <Stats />}
+        {tab === 'settings' && <Settings />}
       </main>
     </div>
   );
