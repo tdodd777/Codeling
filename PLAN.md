@@ -6,14 +6,18 @@ Tactical companion to `DIRECTION.md`. Where DIRECTION captures *why* (vision, de
 
 ## Snapshot
 
-End-to-end pipe is live. You can launch the app with `npm start`, point Claude Code at `localhost:4318`, and watch:
-- The Stats tab populate with real session/message/token counters as Claude Code emits OTEL
-- The Home tab's level bar fill, bits accumulate, and "spin available in N messages" tick down
-- The animated wizard breathe in both the panel stage and the system tray (head-cropped 4 FPS)
+Game loop is live end-to-end. Launch with `npm start`, point Claude Code at `localhost:4318` (use `scripts/install-telemetry.{ps1,sh}` to set the env vars User-scope), and watch:
+- Stats tab populates with sessions / message_count / input+output tokens / cost as Claude Code emits OTEL
+- Home tab fills the XP bar, accumulates bits, ticks down "Spin available in N messages", and shows a "N-day streak" pill once activity is recorded
+- Spin button delivers a tier-styled reveal toast (bits / xp / cosmetic with consolation-bits dedupe), wheel + shop + equip / unequip all wired
+- Evolution stages advance monotonically on cumulative output tokens; tray + panel sprites pick up `stage_<N>/` art when present
+- Achievements fire via OS notifications (16 defs across engagement / progression / evolution / collection / cost / streak)
+- Settings panel edits spin threshold + economy rates + launch-on-login + save export/import + reset save
+- Daily summary fires once per local day with "N sessions · M messages · $X.XX" body
 
-What's *not* yet alive: clicking the spin button does nothing, evolution stages aren't wired to anything, the shop is empty, the only species is wizard, and there's no install flow — Claude Code env vars must be set by hand.
+What's still ahead: bundled `npx codeling install` (interim per-platform scripts shipped), slime/robot species art (code paths in place), code signing + distribution channels, UX polish (popout window, spin reveal animation, customize tab — see DIRECTION.md → Deferred / UX polish).
 
-Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
+Repo: https://github.com/tdodd777/Codeling · main branch tracking origin · run `npm test` for vitest pure-logic suites.
 
 ---
 
@@ -162,9 +166,9 @@ This is the make-or-break adoption flow. Build it once the game is fun enough to
 
 ## Risks / known issues
 
+DIRECTION.md → *Open questions* is the durable list. Items below are PLAN-scoped operational risks; cross-link to DIRECTION for the architectural / design ones (cumulative-vs-delta resilience, multi-machine sync, hook loop risk, sprite manifest triple-scan, stop-hook vs OTEL ordering race).
+
 - **Windows tray icon size cap.** Even with the head-only crop + 40px source, the tray slot is still small relative to text-only icons. May need a per-species redesign (just hat + face emoji-style) if it stays unreadable. Not a code problem — an asset problem.
-- **OTLP cumulative-vs-delta assumption.** Aggregator hardcodes DELTA. If Claude Code ever flips to CUMULATIVE temporality, totals will balloon. Add a `aggregation_temporality` branch before that becomes real.
 - **better-sqlite3 native rebuild.** Forge handles this via `npmRebuild` on `npm start`. If a teammate hits ABI mismatch errors, the fix is `npx electron-rebuild -f -w better-sqlite3`. Document this in README troubleshooting once it bites someone.
-- **Pure-logic tests landed (vitest); DB-touching code still untested.** `evolution.test.ts`, `spin/rewards.test.ts`, `streaks.test.ts` cover the deterministic logic. OTLP→sessions pipe + economy + achievements still need integration tests against a `:memory:` SQLite — blocked on small refactor of `getDb()` to accept a path / use an env override.
-- **Self-feedback loop.** If Codeling ever spawns `claude` (e.g., for a "use Claude to suggest a name" feature), telemetry from that call would feed itself. Handle with `CLAUDE_CODE_ENTRY_POINT` guard or by isolating the receiver per-PID.
+- **Pure-logic tests landed (vitest); DB-touching code still untested.** `evolution.test.ts`, `spin/rewards.test.ts`, `streaks.test.ts` cover the deterministic logic. OTLP→sessions pipe + economy + achievements + stop-hook still need integration tests against a `:memory:` SQLite — blocked on small refactor of `getDb()` to accept a path / use an env override.
 - **Tray animation CPU cost.** `setInterval` at 4 FPS swapping pre-rendered images is cheap, but on battery it adds up. Consider pausing animation when system idle (`powerMonitor.on('suspend' | 'lock-screen')`).

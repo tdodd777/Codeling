@@ -2,7 +2,7 @@
 
 A gamified pet companion for Claude Code. Lives in your menu bar (macOS) or system tray (Windows). The more you use Claude Code, the more your pet grows.
 
-> **Status**: early scaffold — receiver pipe, economy, and live UI work end-to-end. Spin RNG, evolution, cosmetics, and a one-shot `npx codeling install` are still on the backlog. See `DIRECTION.md` for the roadmap.
+> **Status**: M0 → M1 → M5 (mostly) shipped. The game loop is live end-to-end: OTLP receivers ingest Claude Code telemetry, the economy awards XP/bits, evolution stages advance on output-token thresholds, the spin wheel + shop + cosmetics work, achievements + daily streaks + daily summary fire, settings panel + save export/import + auto-launch toggle all land. What's still on the backlog: a one-shot `npx codeling install`, slime/robot species art, code signing + distribution channels, and UX polish (popout window, spin reveal animation, customize tab). See `DIRECTION.md` for the full roadmap and dated decision log.
 
 ## Stack
 
@@ -104,9 +104,11 @@ Drop a PixelLab Character Creator export folder into `assets/sprites/<species>/`
 
 ## Where things live
 
-- **Vision, decisions, backlog**: `DIRECTION.md`
+- **Vision, dated decisions, deferred backlog, open questions**: `DIRECTION.md`
+- **Execution plan + per-milestone done/in-progress checklist**: `PLAN.md`
+- **Human-only tasks** (asset generation, distribution, real-machine validation, playtesting): `HUMAN.md`
 - **SQLite database** (runtime): `%APPDATA%\Codeling\codeling.db` on Windows, `~/Library/Application Support/Codeling/codeling.db` on macOS
-- **Tunable game rules**: `src/main/economy.ts` (`RULES` constant)
+- **Tunable game rules** (defaults): `src/main/economy.ts` (`ECONOMY_RULE_DEFAULTS`); live overrides live in the `meta` table and are editable via the Settings tab → Economy section
 
 ## Scripts
 

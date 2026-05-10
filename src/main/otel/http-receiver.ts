@@ -66,6 +66,8 @@ export async function startHttpReceiver(): Promise<Server> {
         res.status(400).json(result);
         return;
       }
+      const sid = typeof body.session_id === 'string' ? body.session_id : '?';
+      console.log(`[stop-hook] sid=${sid.slice(0, 8)} +msg=${result.messagesAdded}`);
       res.status(204).end();
     } catch (err) {
       console.error('[stop-hook] failed', err);

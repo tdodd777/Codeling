@@ -24,7 +24,9 @@ interface SessionCountRow {
   stop_event_count: number;
 }
 
-export function handleStopHook(event: StopHookEvent): { ok: true } | { error: 'no-session-id' } {
+export function handleStopHook(
+  event: StopHookEvent,
+): { ok: true; messagesAdded: number } | { error: 'no-session-id' } {
   const sid = typeof event.session_id === 'string' ? event.session_id : '';
   if (!sid) return { error: 'no-session-id' };
 
@@ -67,5 +69,5 @@ export function handleStopHook(event: StopHookEvent): { ok: true } | { error: 'n
     notifyUpdate();
   }
 
-  return { ok: true };
+  return { ok: true, messagesAdded };
 }

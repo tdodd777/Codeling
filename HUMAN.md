@@ -73,12 +73,12 @@ These need real money + accounts and can't be set up programmatically.
 
 The interim env-var installer scripts are in place at `scripts/install-telemetry.{ps1,sh}`. Each platform path needs a real-machine smoke test before it's trusted in the bundled `npx codeling install` flow:
 
-- [ ] **Windows** — run `.\scripts\install-telemetry.ps1 install` in PowerShell. Open a brand-new shell (or VS Code window) → confirm `$env:OTEL_EXPORTER_OTLP_ENDPOINT` is `http://127.0.0.1:4318` and Claude Code starts feeding the receiver. Run `uninstall` → confirm vars come back unset.
+- [x] **Windows** — validated 2026-05-10. `.\scripts\install-telemetry.ps1 install` set all six User-scope env vars; new PowerShell session inherited `$env:OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`; Claude Code feeds the receiver end-to-end (telemetry visible in `[otel:http]` logs).
 - [ ] **macOS** (zsh) — run `./scripts/install-telemetry.sh install`. Open a new Terminal/iTerm tab → `printenv | grep -E 'OTEL|CLAUDE'` should show all six vars. Run `uninstall` → block is gone from `~/.zshrc`. Confirm only the marked block was touched (other rc edits intact).
 - [ ] **Linux** (bash) — same drill against `~/.bashrc`.
-- [ ] **Conflict detection** — set `OTEL_EXPORTER_OTLP_ENDPOINT` to a non-Codeling URL first, then run `install`. Confirm: warning lands, no overwrite. Re-run with `-Force` (Windows) or matching `ENDPOINT=...` arg (POSIX) → confirm overwrite proceeds.
-- [ ] **Stop hook installer** (`scripts/install-stop-hook.mjs`) — run `npm run stop-hook:install` against a `~/.claude/settings.json` that already has a non-Codeling Stop hook. Confirm: existing entries are preserved, Codeling's entry is appended once. Run again → still exactly one Codeling entry. Run `stop-hook:uninstall` → only the Codeling entry is removed, others intact.
-- [ ] **Stop hook end-to-end** — start `npm start` (Codeling running), `stop-hook:install`, then trigger a Claude Code Stop event (any normal `claude` invocation that completes a turn). Codeling's main-process console should log a stop-hook receipt; if you bumped the OTEL exporter off, message_count should still climb on the Home tab.
+- [x] **Conflict detection** (Windows) — validated 2026-05-10. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to a non-Codeling URL → `install` warned + bailed, leaving the fake value intact. `install -Force` overwrote cleanly back to Codeling's URL. POSIX equivalent still untested.
+- [x] **Stop hook installer** (`scripts/install-stop-hook.mjs`) — validated 2026-05-10 (Windows). Install added a single tagged Codeling entry; uninstall removed only Codeling's entry and left every other settings.json key intact (`env`, `enabledPlugins`, `effortLevel`, etc.). Multi-entry coexistence (Codeling alongside someone else's Stop hook) still untested.
+- [x] **Stop hook end-to-end** — validated 2026-05-10. New Claude Code session fired the hook on turn end; receipt logs as `[stop-hook] sid=<8char> +msg=N` (log line added this session in `src/main/otel/http-receiver.ts`). ⚠️ **Bug found, deferred**: when Stop arrives before OTEL's `user_prompt` for the same turn (race against OTEL buffering), `message_count` ends up double-counted. Tracked in DIRECTION.md → Open questions; needs an architectural fix.
 
 ---
 
