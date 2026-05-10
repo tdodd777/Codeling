@@ -60,6 +60,12 @@ Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
 - [x] Main-process EventEmitter (`src/main/events.ts`) emits `pet:evolved`; index.ts subscribes and rebuilds tray frames (and static icon) for the new stage
 - [x] ingest.ts logs `evolved=stage_N` alongside econ summary
 
+### M1.3 — Cost tracking
+- [x] `sessions.cost_usd REAL NOT NULL DEFAULT 0` in schema; idempotent migration in `client.ts` (probes `pragma table_info` then `ALTER TABLE ADD COLUMN`)
+- [x] Aggregator handles `claude_code.cost.usage` (DELTA, `as_double`) — no `type` attribute, single scalar per data point routed to `cost_usd` field; repo `VALID_FIELDS` allow-list extended
+- [x] `LifetimeStats.totalCostUsd` summed in `getLifetimeStats`; Stats tab renders a "Cost" row formatted via `Intl.NumberFormat('en-US', {style:'currency'})` (up to 4 decimals so sub-penny totals don't read as $0.00)
+- [x] ingest.ts log shows `+cost_usd=$X.XXXX` alongside other deltas
+
 ---
 
 ## In progress
@@ -71,12 +77,6 @@ _Nothing currently mid-flight._
 ## M1 — Game loop alive (next up)
 
 Goal: every visible UI element does something real. After M1, the app is a complete (if minimal) game.
-
-### M1.3 — Cost tracking
-- [ ] Add `cost_usd REAL DEFAULT 0` column to `sessions` (migration in `client.ts`)
-- [ ] Aggregator: handle `claude_code.cost.usage` metric (DELTA, `as_double`)
-- [ ] `LifetimeStats` adds `totalCostUsd`; Stats tab renders one row
-- **Acceptance**: After a Claude session, Stats shows non-zero "Cost" formatted as `$X.XX`
 
 ### M1.4 — Minimum viable shop
 - [ ] Shop catalog (`src/main/shop/catalog.ts`): a handful of cosmetics + 1-2 upgrades with prices in bits

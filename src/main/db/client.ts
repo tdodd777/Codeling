@@ -14,9 +14,20 @@ export function getDb(): Database.Database {
   db.pragma('foreign_keys = ON');
 
   db.exec(schemaSql);
+  runMigrations(db);
   seedIfEmpty(db);
 
   return db;
+}
+
+// Idempotent column-add migrations — schema.sql is the source of truth for new
+// installs, this brings older DBs in sync. SQLite has no `ADD COLUMN IF NOT
+// EXISTS`, so we probe `pragma table_info` first.
+function runMigrations(d: Database.Database): void {
+  const sessionCols = (d.pragma('table_info(sessions)') as { name: string }[]).map((c) => c.name);
+  if (!sessionCols.includes('cost_usd')) {
+    d.exec(`ALTER TABLE sessions ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0`);
+  }
 }
 
 function seedIfEmpty(d: Database.Database): void {

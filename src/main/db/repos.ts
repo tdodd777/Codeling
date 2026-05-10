@@ -9,6 +9,7 @@ const VALID_FIELDS: ReadonlySet<SessionField> = new Set([
   'output_tokens',
   'cache_read_tokens',
   'cache_creation_tokens',
+  'cost_usd',
 ]);
 
 interface PetRow {
@@ -59,6 +60,7 @@ export function getLifetimeStats(): LifetimeStats {
       total_output: number | null;
       total_cache_read: number | null;
       total_cache_create: number | null;
+      total_cost: number | null;
       session_count: number;
     }>(
       `SELECT
@@ -67,6 +69,7 @@ export function getLifetimeStats(): LifetimeStats {
          COALESCE(SUM(output_tokens), 0)         AS total_output,
          COALESCE(SUM(cache_read_tokens), 0)     AS total_cache_read,
          COALESCE(SUM(cache_creation_tokens), 0) AS total_cache_create,
+         COALESCE(SUM(cost_usd), 0)              AS total_cost,
          COUNT(*)                                AS session_count
        FROM sessions`,
     )
@@ -78,6 +81,7 @@ export function getLifetimeStats(): LifetimeStats {
     totalOutputTokens: row?.total_output ?? 0,
     totalCacheReadTokens: row?.total_cache_read ?? 0,
     totalCacheCreationTokens: row?.total_cache_create ?? 0,
+    totalCostUsd: row?.total_cost ?? 0,
     sessionCount: row?.session_count ?? 0,
   };
 }

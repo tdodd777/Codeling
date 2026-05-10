@@ -45,6 +45,7 @@ interface OpTotals {
   output_tokens: number;
   cache_read_tokens: number;
   cache_creation_tokens: number;
+  cost_usd: number;
 }
 
 function sumOps(ops: SessionOp[]): OpTotals {
@@ -56,6 +57,7 @@ function sumOps(ops: SessionOp[]): OpTotals {
     output_tokens: 0,
     cache_read_tokens: 0,
     cache_creation_tokens: 0,
+    cost_usd: 0,
   };
   for (const op of ops) {
     sessions.add(op.sessionId);
@@ -70,7 +72,9 @@ function formatTotals(t: OpTotals): string {
   const parts: string[] = [`sessions=${t.sessions}`];
   for (const [k, v] of Object.entries(t)) {
     if (k === 'sessions' || v === 0) continue;
-    parts.push(`+${k}=${v}`);
+    // Cost is fractional dollars; format to 4 decimals max (sub-penny is normal).
+    const formatted = k === 'cost_usd' ? `$${(v as number).toFixed(4)}` : v;
+    parts.push(`+${k}=${formatted}`);
   }
   return ` → ${parts.join(' ')}`;
 }

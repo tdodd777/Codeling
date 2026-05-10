@@ -5,7 +5,8 @@ export type SessionField =
   | 'input_tokens'
   | 'output_tokens'
   | 'cache_read_tokens'
-  | 'cache_creation_tokens';
+  | 'cache_creation_tokens'
+  | 'cost_usd';
 
 export interface SessionOp {
   sessionId: string;
@@ -31,7 +32,7 @@ export function aggregateMetrics(payload: unknown): SessionOp[] {
       const metrics = pick<unknown[]>(sm, 'metrics') ?? [];
       for (const m of metrics) {
         const name = pick<string>(m, 'name');
-        if (name !== 'claude_code.token.usage') continue;
+        if (name !== 'claude_code.token.usage' && name !== 'claude_code.cost.usage') continue;
 
         const sum = pick<Record<string, unknown>>(m, 'sum');
         if (!sum) continue;
@@ -43,8 +44,15 @@ export function aggregateMetrics(payload: unknown): SessionOp[] {
           const sid = String(getAttr(attrs, 'session.id') ?? '');
           if (!sid) continue;
 
-          const type = String(getAttr(attrs, 'type') ?? '');
-          const field = TOKEN_TYPE_TO_FIELD[type];
+          // Token usage carries a `type` attribute that selects a column;
+          // cost usage is a single scalar per data point with no `type`.
+          let field: SessionField | undefined;
+          if (name === 'claude_code.token.usage') {
+            const type = String(getAttr(attrs, 'type') ?? '');
+            field = TOKEN_TYPE_TO_FIELD[type];
+          } else {
+            field = 'cost_usd';
+          }
           if (!field) continue;
 
           const value = dataPointValue(dpObj);

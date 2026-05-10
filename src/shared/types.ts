@@ -48,6 +48,7 @@ export interface LifetimeStats {
   totalOutputTokens: number;
   totalCacheReadTokens: number;
   totalCacheCreationTokens: number;
+  totalCostUsd: number;
   sessionCount: number;
 }
 

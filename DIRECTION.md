@@ -101,6 +101,11 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Cost tracking (M1.3)
+- **`claude_code.cost.usage` is DELTA + `as_double`**, single scalar per data point with no `type` attribute. Same metric pipeline as token usage — adds a fourth `SessionField` (`cost_usd`) and threads through `applySessionOps` unchanged thanks to the parameterized `field` interpolation already in place. Repo `VALID_FIELDS` allow-list extended so the dynamic field name interpolation stays injection-safe.
+- **Schema migration via probe-then-ALTER.** SQLite has no `ADD COLUMN IF NOT EXISTS`, and `db.exec(schema)` only runs `CREATE TABLE IF NOT EXISTS` which won't add columns to a pre-existing table. New `runMigrations()` in `client.ts` uses `pragma table_info` to detect missing columns and issues `ALTER TABLE ADD COLUMN` idempotently. Pattern is reusable for future column additions.
+- **Currency display uses sub-penny precision.** `Intl.NumberFormat({style:'currency', maximumFractionDigits: 4})` — early sessions are tiny enough that 2dp would render as `$0.00`. Once the totals are routinely in the dollars range, can drop back to 2dp.
+
 ### 2026-05-10 — Evolution model (M1.2)
 - **Stage is derived state, not earned credit.** `applyEconomy` recomputes the target stage from `SUM(output_tokens)` across the `sessions` table on each ingest tick and writes back the max of (current, target). Monotonic — you never devolve. This means a player can manually reset `pet.evolution_stage = 0` and it'll re-advance on the next economy tick, which is the desired behavior for save migrations.
 - **Cumulative pulled inside the same SQLite txn that updates the pet row** so the read can't observe partial state across concurrent reads (single-threaded today, but the txn boundary is correct regardless).
@@ -130,7 +135,6 @@ Roughly ordered by impact for the next iteration.
 
 ### Game loop
 - **Achievements / streaks** — daily streak, lifetime totals milestones
-- **Cost tracking** — `claude_code.cost.usage` is being received but ignored. Add a `cost_usd` column to `sessions`.
 
 ### Visuals
 - **Per-character pet-stage backgrounds** — give each species a default scene behind the sprite in the Home tab stage area (e.g., wizard tower/spellbook, slime forest, robot lab). Right now the stage is a flat dark purple panel. Suggested layout: `assets/sprites/<species>/background.png` consumed by the manifest scanner; `<PetSprite>` parent renders it as a CSS `background-image`. Make backgrounds optional so it's a graceful fallback when missing. Future: shop-purchased backgrounds layer on top of (or replace) the species default — same slot, different source.

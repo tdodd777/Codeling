@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   input_tokens INTEGER NOT NULL DEFAULT 0,
   output_tokens INTEGER NOT NULL DEFAULT 0,
   cache_read_tokens INTEGER NOT NULL DEFAULT 0,
-  cache_creation_tokens INTEGER NOT NULL DEFAULT 0
+  cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
+  cost_usd REAL NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS otel_events (
