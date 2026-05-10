@@ -79,6 +79,15 @@ html, body, #root {
   background: var(--bg-elev);
   border-radius: 12px;
   margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.pet-stage--scenic {
+  background-color: var(--bg-elev);
+  background-size: cover;
+  background-position: center bottom;
+  /* Pixel-art scenery should stay crisp, not antialiased smooth. */
+  image-rendering: pixelated;
 }
 
 @keyframes pet-float {

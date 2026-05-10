@@ -101,6 +101,11 @@ Manifest also exposes `animations.static` — a 1-frame "animation" per directio
 ### 2026-05-10 — Live UI via `codeling:update` IPC broadcast
 Rather than polling, ingest pushes a debounced `codeling:update` to all windows. Renderer hooks subscribe via `window.codeling.onUpdate(cb)` and refetch their slice of state. Coalesced with `setImmediate` so a burst of OTLP signals = one renderer refresh.
 
+### 2026-05-10 — Pet-stage scenery (M1.5)
+- **Background lives in the manifest, not as a separate IPC.** `SpriteManifest.background` is populated by `findBackground` during the same scan that builds rotations/animations. Renderer fetches once per `(species, stage)` change. Keeping it in the manifest means future per-stage scenery (apprentice → archmage tower) lands automatically without touching the renderer.
+- **Stage-specific scenery wins over species default.** `assets/sprites/<species>/stage_<N>/background.png` overrides `assets/sprites/<species>/background.png`. Mirrors the rotations/animations precedence rule — same mental model across all PNG kinds.
+- **Renderer applies `image-rendering: pixelated`** so PixelLab pixel-art scenery doesn't get blurry-resampled when the stage is wider than the source PNG. `background-size: cover; background-position: center bottom;` so the floor of the scene anchors correctly even at non-1:1 aspect ratios.
+
 ### 2026-05-10 — Shop + first upgrade (M1.4)
 - **Shop cosmetic ids reuse `unlocks.item_id` keyspace.** A cosmetic obtained via the wheel and the same cosmetic listed in the shop are the *same row* — `INSERT OR IGNORE` plus the upfront `already-owned` check both protect against double-acquisition. This means wheel-only and shop-only cosmetics can co-exist without a separate "purchasable from shop" flag; the catalog is just a subset of the COSMETICS registry.
 - **Upgrades go through the same `unlocks` table with `category='upgrade'`.** Cheap unified ownership query (`SELECT FROM unlocks WHERE item_id = ?`). `bit_multiplier_2x` sets the pattern: economy reads ownership inside its txn — purchase that lands mid-batch is consistent for that ingest tick. When upgrade count grows, factor out an `applyMultipliers` helper rather than chaining ifs.

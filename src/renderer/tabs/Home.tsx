@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PetState, SpinResponse, SpinResult, SpinState } from '@shared/types';
+import type { PetState, SpinResponse, SpinResult, SpinState, SpriteManifest } from '@shared/types';
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
@@ -18,6 +18,7 @@ function describeApplied(result: SpinResult): string {
 export function Home() {
   const [pet, setPet] = useState<PetState | null>(null);
   const [spin, setSpin] = useState<SpinState | null>(null);
+  const [manifest, setManifest] = useState<SpriteManifest | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
   const dismissRef = useRef<number | null>(null);
@@ -30,6 +31,16 @@ export function Home() {
     refetch();
     return window.codeling.onUpdate(refetch);
   }, []);
+
+  // Background scenery is per (species, stage). Refetch when either changes —
+  // evolution lands as a pet update which triggers this effect.
+  useEffect(() => {
+    if (!pet) return;
+    window.codeling
+      .getSprites(pet.species, pet.evolutionStage)
+      .then(setManifest)
+      .catch(console.error);
+  }, [pet?.species, pet?.evolutionStage]);
 
   useEffect(
     () => () => {
@@ -79,7 +90,10 @@ export function Home() {
 
   return (
     <div className="home">
-      <div className="pet-stage">
+      <div
+        className={`pet-stage ${manifest?.background ? 'pet-stage--scenic' : ''}`}
+        style={manifest?.background ? { backgroundImage: `url("${manifest.background}")` } : undefined}
+      >
         <PetSprite species={pet.species} stage={pet.evolutionStage} size={128} />
       </div>
 

@@ -13,6 +13,7 @@ export type Direction =
 export interface SpriteManifest {
   static: string; // url to single-frame fallback (always populated)
   animations: Record<string, Partial<Record<Direction, string[]>>>;
+  background?: string; // url to a stage scenery PNG, if the species has one
 }
 
 export interface PetState {

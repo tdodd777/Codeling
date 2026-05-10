@@ -49,9 +49,11 @@ When slime/robot land, a follow-up code change is needed to:
 
 ### Per-pet stage backgrounds (M1.5)
 
-- [ ] **`assets/sprites/wizard/background.png`** — a scene behind the wizard in the Home tab stage area. Tower interior, library, spellbook room.
+Wired up — drop a PNG and it appears in the Home tab. No code change needed.
 
-Convention to confirm during M1.5 implementation: scanner exposes `background?: string` from `assets/sprites/<species>/background.png` (or `<species>/stage_<N>/background.png` for stage-specific scenes); Home renders as `background-image` on `.pet-stage` div.
+- [ ] **`assets/sprites/wizard/background.png`** — apprentice-tier scene behind the wizard. Suggested: spellbook desk, library nook, or tower interior. Recommended size: 380×160 (matches the `.pet-stage` slot at 1:1; will scale via `background-size: cover` if larger). Pixel-art preferred — renderer applies `image-rendering: pixelated`.
+- [ ] **`assets/sprites/wizard/stage_2/background.png`** (optional, future) — archmage-tier scene. Stage-specific override; `findBackground` checks here before falling back to the species default.
+- [ ] **`assets/sprites/wizard/stage_3/background.png`** (optional, future) — cosmic / ascended scene.
 
 ---
 

@@ -73,6 +73,12 @@ Repo: https://github.com/tdodd777/Codeling · main branch tracking origin
 - [x] `applyEconomy` checks `unlocks` for `bit_multiplier_2x` inside its txn and doubles `bitsGained` if owned
 - [x] Shop tab redesigned: header with "N bits" balance, single per-tab list combining catalog items and owned-not-in-catalog (wheel rewards still appear). Inline buy button, disabled when broke or pending. Per-row success/error feedback with auto-dismiss.
 
+### M1.5 — Per-character pet-stage background
+- [x] `SpriteManifest.background?: string` populated by `findBackground` in `src/main/sprites.ts` — prefers `assets/sprites/<species>/stage_<N>/background.png`, falls back to `assets/sprites/<species>/background.png`
+- [x] Home tab fetches manifest by `(species, stage)`, applies `background-image` + `background-size: cover` to `.pet-stage` only when present (`pet-stage--scenic` modifier); refetches on evolution
+- [x] `image-rendering: pixelated` on the scenic stage so PixelLab scenery stays crisp
+- [ ] **Asset task** (HUMAN.md): drop a `background.png` into `assets/sprites/wizard/` — without it, stage stays flat purple as before
+
 ---
 
 ## In progress
@@ -84,12 +90,6 @@ _Nothing currently mid-flight._
 ## M1 — Game loop alive (next up)
 
 Goal: every visible UI element does something real. After M1, the app is a complete (if minimal) game.
-
-### M1.5 — Per-character pet-stage background
-- [ ] Sprite manifest exposes `background?: string` from `assets/sprites/<species>/background.png` if present
-- [ ] Home tab `.pet-stage` div uses it as `background-image` (no PNG present → keep current flat panel)
-- [ ] Drop in a wizard background (PixelLab can generate scenery — tower interior or library)
-- **Acceptance**: Wizard sits in a themed scene instead of a flat purple box
 
 ---
 

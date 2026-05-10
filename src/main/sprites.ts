@@ -72,12 +72,43 @@ function frameIndex(file: string): number {
   return m && m[1] ? parseInt(m[1], 10) : -1;
 }
 
+// Scenery background lives next to rotations/animations as a single PNG. Stage-
+// specific scenery wins over the species default — e.g., stage_2/background.png
+// (archmage tower) overrides background.png (apprentice quarters) once the pet
+// has evolved that far.
+function findBackground(species: Species, stage: number): string | undefined {
+  const candidates: { dir: string; segments: string[] }[] = [];
+  if (stage > 0) {
+    candidates.push({
+      dir: path.join(spritesRoot(), species, `stage_${stage}`),
+      segments: ['./sprites', species, `stage_${stage}`],
+    });
+  }
+  candidates.push({
+    dir: path.join(spritesRoot(), species),
+    segments: ['./sprites', species],
+  });
+  for (const c of candidates) {
+    const file = path.join(c.dir, 'background.png');
+    try {
+      if (fs.statSync(file).isFile()) {
+        return [...c.segments, 'background.png'].join('/');
+      }
+    } catch {
+      // missing — try next
+    }
+  }
+  return undefined;
+}
+
 export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest {
   const { dir: root, urlSegments } = speciesStageRoot(species, stage);
   const manifest: SpriteManifest = {
     static: urlFor(urlSegments, 'rotations', 'south.png'),
     animations: {},
   };
+  const background = findBackground(species, stage);
+  if (background) manifest.background = background;
 
   if (!fs.existsSync(root)) {
     console.warn(`[sprites] no sprite directory for ${species} stage ${stage} at ${root}`);
