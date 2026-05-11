@@ -8,14 +8,24 @@
   "bin": {
     "codeling": "./scripts/codeling-cli.mjs"
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "scripts/codeling-cli.mjs",
+    "scripts/install-telemetry.ps1",
+    "scripts/install-telemetry.sh",
+    "scripts/install-stop-hook.mjs"
+  ],
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
+    "publish": "electron-forge publish",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "setup": "node ./scripts/codeling-cli.mjs install",
+    "setup": "node ./scripts/codeling-cli.mjs install --skip-app",
     "setup:uninstall": "node ./scripts/codeling-cli.mjs uninstall",
     "setup:status": "node ./scripts/codeling-cli.mjs status",
     "dev:unlock-all": "node ./scripts/dev-unlock-all.mjs",

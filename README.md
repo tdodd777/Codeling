@@ -2,7 +2,7 @@
 
 A gamified pet companion for Claude Code. Lives in your menu bar (macOS) or system tray (Windows). The more you use Claude Code, the more your pet grows.
 
-> **Status**: M0 → M1 → M5 (mostly) shipped. The game loop is live end-to-end: OTLP receivers ingest Claude Code telemetry, the economy awards XP/bits, evolution stages advance on output-token thresholds, the spin wheel + shop + cosmetics work, achievements + daily streaks + daily summary fire, settings panel + save export/import + auto-launch toggle all land. Sprite roster is 14 species with art (PixelLab wizard + rvros slime + 12 LuizMelo CC0 creatures). What's still on the backlog: a one-shot `npx codeling install`, robot species art, code signing + distribution channels, and UX polish (popout window, spin reveal animation, customize tab). See `DIRECTION.md` for the full roadmap and dated decision log; `sprites.md` for the asset catalog.
+> **Status**: M0 → M1 → M5 (mostly) shipped. The game loop is live end-to-end: OTLP receivers ingest Claude Code telemetry, the economy awards XP/bits, the spin wheel + shop + species/animation unlocks work, achievements + daily streaks + daily summary fire, settings panel + save export/import + auto-launch toggle all land. Sprite roster is 14 species with art (PixelLab wizard + rvros slime + 12 LuizMelo CC0 creatures). Distribution is wired: `npx codeling install` downloads + runs the OS installer from GitHub Releases, then sets up telemetry + the Stop hook; auto-updater feeds from `update.electronjs.org`. What's still open: paid code-signing certs (unsigned builds work but trigger publisher-unknown warnings), the first published release, robot species art, and UX polish. See `DIRECTION.md` for the full roadmap and dated decision log; `sprites.md` for the asset catalog.
 
 ## Stack
 
@@ -12,52 +12,53 @@ A gamified pet companion for Claude Code. Lives in your menu bar (macOS) or syst
 - OpenTelemetry receivers — both OTLP/HTTP (`:4318`) and OTLP/gRPC (`:4317`)
 - Sprite assets: original wizard from [PixelLab](https://pixellab.ai/) (paid); rest of the roster (slime + 12 monsters/creatures) from CC0 itch.io packs — see `sprites.md`
 
-## Quick start
+## Install
+
+**Requirements:** Node 18+ (`node --version`). Claude Code installed and working.
 
 ```bash
+npx codeling install
+```
+
+That one command:
+
+1. Downloads the installer for your OS from the latest [GitHub Release](https://github.com/tdodd777/Codeling/releases) (`.exe` on Windows, `.dmg` on macOS, `.deb` / `.rpm` on Linux) and runs it.
+2. Sets the User-scope OTEL env vars so every Claude Code session feeds Codeling's receiver.
+3. Installs the Stop hook in `~/.claude/settings.json` for a backup per-turn message tally.
+
+Flags: `--skip-app`, `--skip-otel`, `--skip-hook` for staged installs.
+
+> **Unsigned builds**: until code signing certs are wired (paid Apple Developer ID + Authenticode), the first launch shows a "publisher unknown" / "unidentified developer" warning. Dismiss it once; subsequent launches are silent.
+
+After install, restart your shell so the new env vars propagate (IDEs / VS Code need a relaunch too). Send a message through Claude Code and watch the tray pet level up.
+
+### Uninstall
+
+```bash
+npx codeling uninstall          # removes telemetry + Stop hook
+```
+
+The app itself is removed via the OS — *Add or Remove Programs* on Windows, drag-to-Trash on macOS, `apt remove codeling` / `rpm -e codeling` on Linux.
+
+### Status
+
+```bash
+npx codeling status             # shows env vars + Stop hook + platform
+```
+
+## Manual install (from source)
+
+For development or if you'd rather run from a clone:
+
+```bash
+git clone https://github.com/tdodd777/Codeling.git
+cd Codeling
 npm install
-npm start
+npm run setup          # same as `npx codeling install --skip-app`
+npm start              # launches the app from source
 ```
 
-The app launches in the tray. Open the panel — you'll see Home / Shop / Stats tabs with the wizard pet on the Home tab. Stats are zero until Claude Code starts emitting telemetry.
-
-### Point Claude Code at the receiver
-
-Run the installer for your platform — it sets the User-scope env vars so every Claude Code session feeds the receiver:
-
-```powershell
-# Windows (PowerShell)
-.\scripts\install-telemetry.ps1 install
-
-# Inspect / undo
-.\scripts\install-telemetry.ps1 status
-.\scripts\install-telemetry.ps1 uninstall
-```
-
-```bash
-# macOS / Linux
-./scripts/install-telemetry.sh install
-
-# Inspect / undo
-./scripts/install-telemetry.sh status
-./scripts/install-telemetry.sh uninstall
-```
-
-Restart any open shells, VS Code, or terminals after install — env vars only propagate to newly-launched processes. The Windows script writes per-User env vars; the POSIX script writes a marked block to `~/.zshrc` (zsh) or `~/.bashrc` (bash) so uninstall stays surgical.
-
-Eventually all of this gets folded into `npx codeling install` along with auto-launch + Stop-hook installation.
-
-### (Optional) Catch dropped messages with the Stop hook
-
-Claude Code's `Stop` hook fires once per turn end. Routing it to Codeling's receiver gives a supplementary message tally — when the OTEL exporter drops a `user_prompt` log, the Stop event still bumps the count.
-
-```bash
-npm run stop-hook:install   # adds an entry to ~/.claude/settings.json
-npm run stop-hook:status
-npm run stop-hook:uninstall
-```
-
-The installer is a small Node script (`scripts/install-stop-hook.mjs`); it edits `~/.claude/settings.json` in place, tagging Codeling's entry by the marker URL so uninstall stays surgical. New Claude Code sessions pick up the hook automatically.
+`npm start` is the Forge dev loop — Vite HMR for the renderer, hot main-process reload on save (type `rs` in the terminal to manually restart).
 
 <details>
 <summary>Manual env vars (if you'd rather set them yourself)</summary>
@@ -133,4 +134,6 @@ See [`sprites.md`](sprites.md) for the curated catalog of vetted open-source spr
 | `npm run lint` | TypeScript type check (`tsc --noEmit`) |
 | `npm test` | Run vitest (pure-logic suites); `npm run test:watch` for watch mode |
 | `npm run package` | Forge package — produces an unpacked binary |
-| `npm run make` | Forge make — produces installers (Squirrel/DEB/RPM/ZIP) |
+| `npm run make` | Forge make — produces installers (Squirrel/DMG/DEB/RPM) in `out/make/` |
+| `GITHUB_TOKEN=… npm run publish` | Forge publish — uploads installers to GitHub Releases as a draft (do not run lightly; cuts a release) |
+| `npm run setup` | Same as `npx codeling install --skip-app` — telemetry + Stop hook only |
