@@ -3,6 +3,7 @@ import { PET_NAME_MAX_LENGTH, SPECIES_CATALOG, type AnimationView, type PetState
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
+const REVEAL_DURATION_MS = 900;
 
 function describeApplied(result: SpinResult): string {
   const { applied } = result;
@@ -28,7 +29,9 @@ export function Home() {
   const [homeAnim, setHomeAnim] = useState<string>('idle');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
+  const [revealPhase, setRevealPhase] = useState<'reveal' | 'result'>('result');
   const dismissRef = useRef<number | null>(null);
+  const revealRef = useRef<number | null>(null);
 
   useEffect(() => {
     const refetch = () => {
@@ -89,26 +92,47 @@ export function Home() {
   useEffect(
     () => () => {
       if (dismissRef.current !== null) window.clearTimeout(dismissRef.current);
+      if (revealRef.current !== null) window.clearTimeout(revealRef.current);
     },
     [],
   );
 
-  // Esc dismisses an open spin reveal toast. Conditional listener — no point
-  // attaching when the toast isn't shown, and avoids stealing Esc from inputs.
+  // Esc dismisses an open spin reveal toast. During reveal phase, Esc skips
+  // to the result instead of closing the whole toast. Conditional listener —
+  // no point attaching when the toast isn't shown, and avoids stealing Esc
+  // from inputs.
   useEffect(() => {
     if (!toast) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') dismissToast();
+      if (e.key === 'Escape') {
+        if (revealPhase === 'reveal') skipReveal();
+        else dismissToast();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // dismissToast captures dismissRef; it's stable across renders (ref +
-    // setState only), so the eslint-deps warning is a false positive here.
+    // skipReveal / dismissToast capture refs that are stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]);
+  }, [toast, revealPhase]);
 
   function showToast(result: SpinResult) {
     setToast(result);
+    setRevealPhase('reveal');
+    if (revealRef.current !== null) window.clearTimeout(revealRef.current);
+    revealRef.current = window.setTimeout(() => {
+      setRevealPhase('result');
+      // Start the auto-dismiss countdown only after the reveal lands.
+      if (dismissRef.current !== null) window.clearTimeout(dismissRef.current);
+      dismissRef.current = window.setTimeout(() => setToast(null), TOAST_AUTO_DISMISS_MS);
+    }, REVEAL_DURATION_MS);
+  }
+
+  function skipReveal() {
+    if (revealRef.current !== null) {
+      window.clearTimeout(revealRef.current);
+      revealRef.current = null;
+    }
+    setRevealPhase('result');
     if (dismissRef.current !== null) window.clearTimeout(dismissRef.current);
     dismissRef.current = window.setTimeout(() => setToast(null), TOAST_AUTO_DISMISS_MS);
   }
@@ -118,6 +142,10 @@ export function Home() {
     if (dismissRef.current !== null) {
       window.clearTimeout(dismissRef.current);
       dismissRef.current = null;
+    }
+    if (revealRef.current !== null) {
+      window.clearTimeout(revealRef.current);
+      revealRef.current = null;
     }
   }
 
@@ -200,18 +228,34 @@ export function Home() {
       </div>
 
       {toast && (
-        <div className="spin-toast-backdrop" onClick={dismissToast}>
-          <div
-            className={`spin-toast spin-toast--${toast.reward.tier}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="spin-toast__tier">{toast.reward.tier}</div>
-            <div className="spin-toast__label">{toast.reward.label}</div>
-            <div className="spin-toast__detail">{describeApplied(toast)}</div>
-            <button className="spin-toast__close" onClick={dismissToast}>
-              Sweet
-            </button>
-          </div>
+        <div
+          className="spin-toast-backdrop"
+          onClick={revealPhase === 'reveal' ? skipReveal : dismissToast}
+        >
+          {revealPhase === 'reveal' ? (
+            <div className="spin-toast spin-toast--rolling" onClick={(e) => e.stopPropagation()}>
+              <div className="spin-toast__tier spin-toast__tier--rolling">
+                <span className="spin-toast__tier-cycle">common</span>
+                <span className="spin-toast__tier-cycle">uncommon</span>
+                <span className="spin-toast__tier-cycle">rare</span>
+                <span className="spin-toast__tier-cycle">legendary</span>
+              </div>
+              <div className="spin-toast__label spin-toast__label--rolling">…</div>
+              <div className="spin-toast__detail">Spinning</div>
+            </div>
+          ) : (
+            <div
+              className={`spin-toast spin-toast--${toast.reward.tier}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="spin-toast__tier">{toast.reward.tier}</div>
+              <div className="spin-toast__label">{toast.reward.label}</div>
+              <div className="spin-toast__detail">{describeApplied(toast)}</div>
+              <button className="spin-toast__close" onClick={dismissToast}>
+                Sweet
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -340,6 +340,52 @@ html, body, #root {
   font-size: 12px;
 }
 
+/* Reveal phase — short anticipation before the actual result lands.
+   Tier name cycles through the four rarities; label pulses; border swaps
+   color in step with the tier cycle for a quick "what will it land on?"
+   beat. Duration roughly matches REVEAL_DURATION_MS in Home.tsx. */
+@keyframes spin-rolling-tier {
+  0%, 24%   { transform: translateY(0); }
+  25%, 49%  { transform: translateY(-1.4em); }
+  50%, 74%  { transform: translateY(-2.8em); }
+  75%, 100% { transform: translateY(-4.2em); }
+}
+
+@keyframes spin-rolling-border {
+  0%, 24%   { border-color: #4a4868; }
+  25%, 49%  { border-color: #4d8c5a; }
+  50%, 74%  { border-color: #5e7fc7; }
+  75%, 100% { border-color: #d6a23a; }
+}
+
+@keyframes spin-rolling-label {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+.spin-toast--rolling {
+  animation: spin-rolling-border 900ms steps(4, end);
+}
+
+.spin-toast__tier--rolling {
+  height: 1.4em;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.4em;
+  animation: spin-rolling-tier 900ms steps(4, end);
+}
+
+.spin-toast__tier-cycle {
+  display: block;
+  height: 1.4em;
+}
+
+.spin-toast__label--rolling {
+  animation: spin-rolling-label 450ms ease-in-out infinite;
+  letter-spacing: 0.3em;
+}
+
 .spin-toast--common      { border-color: #4a4868; }
 .spin-toast--uncommon    { border-color: #4d8c5a; box-shadow: 0 12px 30px rgba(77, 140, 90, 0.25); }
 .spin-toast--rare        { border-color: #5e7fc7; box-shadow: 0 12px 30px rgba(94, 127, 199, 0.3); }
