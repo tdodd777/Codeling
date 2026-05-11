@@ -7,10 +7,10 @@
   "private": true,
   "author": {
     "name": "Tyler Dodd",
-    "email": "tdodd777@gmail.com",
+    "email": "tdodd777@users.noreply.github.com",
     "url": "https://github.com/tdodd777"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "homepage": "https://github.com/tdodd777/Codeling",
   "repository": {
     "type": "git",
