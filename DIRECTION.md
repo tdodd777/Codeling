@@ -2,6 +2,8 @@
 
 A living doc. Append entries with a date stamp. Read top-to-bottom before starting non-trivial work — newer entries can supersede older ones.
 
+> **Forward-looking work lives in `roadmap.md`** (current state, in-progress, next-up, deferred). This doc owns the *why* (decisions log, rationale). When deferring work, add it to roadmap.md's **Next up** or **Later**; when making a decision, append here with a date stamp.
+
 ---
 
 ## Vision (north star)
