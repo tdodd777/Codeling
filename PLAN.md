@@ -15,7 +15,9 @@ Game loop is live end-to-end. Launch with `npm start`, point Claude Code at `loc
 - Settings panel edits spin threshold + economy rates + launch-on-login + save export/import + reset save
 - Daily summary fires once per local day with "N sessions · M messages · $X.XX" body
 
-What's still ahead: bundled `npx codeling install` (interim per-platform scripts shipped), slime/robot species art (code paths in place), code signing + distribution channels, UX polish (popout window, spin reveal animation, customize tab — see DIRECTION.md → Deferred / UX polish).
+Sprite roster now 14 species with art (PixelLab wizard + rvros slime + 12 LuizMelo CC0 creatures), all integrated and visually verified end-to-end. See `sprites.md`.
+
+What's still ahead: bundled `npx codeling install` (interim per-platform scripts shipped), robot species art (David Harrington CC0 candidate, not yet pulled), code signing + distribution channels, UX polish (popout window, spin reveal animation, customize tab — see DIRECTION.md → Deferred / UX polish).
 
 Repo: https://github.com/tdodd777/Codeling · main branch tracking origin · run `npm test` for vitest pure-logic suites.
 
@@ -103,9 +105,9 @@ Code-only items shipped; species roster has expanded well beyond the original 3-
 
 - [x] Slime species (rvros CC0 — single-direction idle + run, `assets/sprites/slime/`)
 - [ ] Robot species → `assets/sprites/robot/` — David Harrington CC0 robot is the candidate, see `sprites.md`
-- [x] **Bonus** — 8 LuizMelo creatures shipped (flying_eye, bat, mimic, evil_wizard, fire_worm, martial_hero, martial_hero_2, apprentice_wizard) via `scripts/luizmelo-slice.py`. 4 more (goblin, skeleton, mushroom, rat) archived in `sources/luizmelo/`, slicer-ready.
-- [x] Per-species `TRAY_HEAD_FRACTION: Record<Species, number>` (`src/main/index.ts`): `wizard: 0.55`, `slime: 0.85`, `robot: 1.0`. `processForTray(img, species)` reads the fraction; slime/robot values are placeholders to tune once art lands.
-- [ ] First-launch starter randomizer (replace hardcoded `wizard` seed) — **blocked on slime + robot art**
+- [x] **Bonus** — 12 LuizMelo creatures shipped via `scripts/luizmelo-slice.py`: flying_eye, bat, mimic, evil_wizard, fire_worm, martial_hero, martial_hero_2, apprentice_wizard, goblin, skeleton, mushroom, rat. All CC0, all visually verified.
+- [x] Per-species `TRAY_HEAD_FRACTION: Record<Species, number>` (`src/main/index.ts`): now 15 entries covering all integrated species + the robot placeholder. `processForTray(img, species)` reads the fraction; per-species values for the LuizMelo roster are placeholders to tune as each is observed on a real tray.
+- [ ] First-launch starter randomizer (replace hardcoded `wizard` seed). Slime + LuizMelo roster art exists; need to decide which subset of the 14 art-shipped species rotate as starters vs. unlockable via other paths.
 - [ ] Silhouette reveal animation on starter assignment — **blocked on starter randomizer**
 - [x] Pet rename UI: click `pet-name` on Home → inline input (`PetNameEdit` in `Home.tsx`); IPC `codeling:renamePet(name)` validates 1-`PET_NAME_MAX_LENGTH` chars trimmed, returns distinct `empty-name`/`name-too-long` error codes. Tray tooltip updates via new `pet:renamed` event.
 - [ ] Other-direction sprite usage: stage shows pet facing toward whichever side made it gain XP last? (TBD — pick something fun)

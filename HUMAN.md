@@ -41,7 +41,7 @@ Each stage folder mirrors the root layout — `rotations/` (8 directions) + `ani
 
 - [x] **`assets/sprites/slime/`** — shipped (rvros, CC0, single-direction idle + run; documented in `sprites.md`).
 - [ ] **`assets/sprites/robot/`** — `Species` type slot exists; David Harrington CC0 robot from `sprites.md` is the prime candidate, not yet pulled.
-- [x] **Per-species tray crop fractions** — `TRAY_HEAD_FRACTION` extended to 11 entries (`src/main/index.ts`); placeholders for newer species, tune as art lands.
+- [x] **Per-species tray crop fractions** — `TRAY_HEAD_FRACTION` extended to 15 entries (`src/main/index.ts`); placeholders for newer species, tune as art lands.
 
 When robot lands (and if we add more starters), follow-up code change still needed:
 - Switch the seed in `src/main/db/client.ts` from hardcoded `wizard` to a random starter
@@ -49,12 +49,13 @@ When robot lands (and if we add more starters), follow-up code change still need
 
 ### Additional integrated species (from LuizMelo)
 
-These are pet-species expansions beyond the original (wizard, slime, robot) spec. All CC0 from https://luizmelo.itch.io/, all sliced via `scripts/luizmelo-slice.py`. Full table in `sprites.md`:
+These are pet-species expansions beyond the original (wizard, slime, robot) spec. All CC0 from https://luizmelo.itch.io/, all sliced via `scripts/luizmelo-slice.py`. Full table in `sprites.md`.
 
-- [x] `flying_eye`, `bat`, `mimic` (MCF1/MCF2 creatures)
-- [x] `evil_wizard`, `fire_worm`, `martial_hero`, `martial_hero_2`, `apprentice_wizard` (sidescroller-style humanoids + fire worm creature)
+- [x] **Monsters & Creatures Fantasy 1**: `flying_eye`, `goblin`, `mushroom`, `skeleton`
+- [x] **Monsters & Creatures Fantasy 2**: `bat`, `mimic`, `rat`
+- [x] **Sidescroller packs**: `evil_wizard`, `fire_worm`, `martial_hero`, `martial_hero_2`, `apprentice_wizard`
 
-Pending in `assets/sources/luizmelo/` (un-integrated): `goblin`, `skeleton`, `mushroom`, `rat`. Extend `SPECIES` in the slicer + re-run to wire them in.
+All 12 visually verified. Source archives preserved under `assets/sources/luizmelo/` with NOTICE.md. Re-running the slicer is idempotent — it wipes and rebuilds each species directory cleanly.
 
 ### Per-pet stage backgrounds (M1.5)
 
