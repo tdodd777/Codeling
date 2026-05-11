@@ -16,6 +16,7 @@ import {
 } from '@shared/types';
 import {
   getAchievementsView,
+  getHomeAnimation,
   getLifetimeStats,
   getPet,
   getSpinState,
@@ -23,6 +24,7 @@ import {
   renamePet,
   resetSave,
   setActiveSpecies,
+  setHomeAnimation,
   setSpinThreshold,
 } from './db/repos';
 import { getDb } from './db/client';
@@ -54,6 +56,22 @@ export function registerIpcHandlers(): void {
     return buildSpriteManifest(species, unlocked);
   });
   ipcMain.handle('codeling:getAnimationsCatalog', () => getAnimationsCatalog());
+  ipcMain.handle('codeling:getHomeAnimation', (_, species: Species) => {
+    if (!(species in SPECIES_CATALOG)) return 'idle';
+    return getHomeAnimation(species);
+  });
+  ipcMain.handle('codeling:setHomeAnimation', (_, species: Species, name: string): { ok: true; name: string } | { error: 'not-owned' } => {
+    if (!(species in SPECIES_CATALOG)) return { error: 'not-owned' };
+    if (typeof name !== 'string' || name.length === 0) return { error: 'not-owned' };
+    // Idle is always valid; everything else must be in the owned set.
+    if (name !== 'idle') {
+      const owned = getOwnedAnimationNames(species);
+      if (!owned.has(name)) return { error: 'not-owned' };
+    }
+    setHomeAnimation(species, name);
+    notifyUpdate();
+    return { ok: true, name };
+  });
   ipcMain.handle('codeling:getUnlocks', () => getUnlocks());
   ipcMain.handle('codeling:getShopItems', (): ShopItemView[] => {
     // Owned species drop out of the buyable list — they'll appear in the

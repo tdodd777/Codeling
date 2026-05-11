@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { PET_NAME_MAX_LENGTH, SPECIES_CATALOG, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest } from '@shared/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { PET_NAME_MAX_LENGTH, SPECIES_CATALOG, type AnimationView, type PetState, type SpeciesAnimationsCatalog, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest } from '@shared/types';
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
@@ -24,6 +24,8 @@ export function Home() {
   const [spin, setSpin] = useState<SpinState | null>(null);
   const [streak, setStreak] = useState(0);
   const [manifest, setManifest] = useState<SpriteManifest | null>(null);
+  const [animCatalog, setAnimCatalog] = useState<SpeciesAnimationsCatalog>({});
+  const [homeAnim, setHomeAnim] = useState<string>('idle');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
   const dismissRef = useRef<number | null>(null);
@@ -33,19 +35,53 @@ export function Home() {
       window.codeling.getPet().then(setPet).catch(console.error);
       window.codeling.getSpinState().then(setSpin).catch(console.error);
       window.codeling.getStreak().then(setStreak).catch(console.error);
+      window.codeling.getAnimationsCatalog().then(setAnimCatalog).catch(console.error);
     };
     refetch();
     return window.codeling.onUpdate(refetch);
   }, []);
 
-  // Background scenery is per species. Refetch when the active species changes.
+  // Background scenery + manifest is per species. Refetch when the active
+  // species changes — also pulls the saved Home animation preference for
+  // that species (defaults to 'idle' when nothing was ever set).
   useEffect(() => {
     if (!pet) return;
     window.codeling
       .getSprites(pet.species)
       .then(setManifest)
       .catch(console.error);
+    window.codeling
+      .getHomeAnimation(pet.species)
+      .then(setHomeAnim)
+      .catch(console.error);
   }, [pet?.species]);
+
+  // Available picker options = owned animations for the active species from
+  // the catalog. Catalog already dedupes by canonical name.
+  const pickerOptions = useMemo<AnimationView[]>(() => {
+    if (!pet) return [];
+    const list = animCatalog[pet.species] ?? [];
+    return list.filter((a) => a.owned);
+  }, [pet?.species, animCatalog]);
+
+  // Safety: if the saved preference points to an animation the player no
+  // longer owns (shouldn't happen — unlocks are append-only — but resetSave
+  // could wipe), fall back to idle.
+  const effectiveAnim = useMemo(() => {
+    if (homeAnim === 'idle') return 'idle';
+    return pickerOptions.some((a) => a.name === homeAnim) ? homeAnim : 'idle';
+  }, [homeAnim, pickerOptions]);
+
+  async function handlePickAnim(name: string) {
+    if (!pet) return;
+    if (name === homeAnim) return;
+    setHomeAnim(name); // optimistic
+    const res = await window.codeling.setHomeAnimation(pet.species, name);
+    if ('error' in res) {
+      // Roll back optimistic update on the off-chance the main process rejects.
+      window.codeling.getHomeAnimation(pet.species).then(setHomeAnim).catch(console.error);
+    }
+  }
 
   useEffect(
     () => () => {
@@ -113,8 +149,26 @@ export function Home() {
         className={`pet-stage ${manifest?.background ? 'pet-stage--scenic' : ''}`}
         style={manifest?.background ? { backgroundImage: `url("${manifest.background}")` } : undefined}
       >
-        <PetSprite species={pet.species} size={128} />
+        <PetSprite species={pet.species} size={128} animation={effectiveAnim} />
       </div>
+
+      {pickerOptions.length > 1 && (
+        <div className="anim-picker" role="radiogroup" aria-label="Pet animation">
+          {pickerOptions.map((opt) => (
+            <button
+              key={opt.name}
+              type="button"
+              role="radio"
+              aria-checked={effectiveAnim === opt.name}
+              className={`anim-picker__pill ${effectiveAnim === opt.name ? 'anim-picker__pill--on' : ''}`}
+              onClick={() => handlePickAnim(opt.name)}
+              title={opt.name}
+            >
+              {opt.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="pet-meta">
         <PetNameEdit currentName={pet.name} />

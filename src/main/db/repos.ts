@@ -53,6 +53,27 @@ export function getPet(): PetState {
   };
 }
 
+// Home animation preference. Per-species so switching active pet doesn't
+// surprise the player with the previous species' choice — each pet remembers
+// its own. Meta key format `home_animation:<species>`. Defaults to 'idle'.
+const HOME_ANIM_KEY_PREFIX = 'home_animation:';
+
+export function getHomeAnimation(species: Species): string {
+  const row = getDb()
+    .prepare<[string], { value: string }>(`SELECT value FROM meta WHERE key = ?`)
+    .get(`${HOME_ANIM_KEY_PREFIX}${species}`);
+  return row?.value ?? 'idle';
+}
+
+// Caller must have validated the name against the species' owned animations
+// before calling. Repo-level just persists the choice; ownership-gating lives
+// in the IPC handler so the error path can return a typed response.
+export function setHomeAnimation(species: Species, name: string): void {
+  getDb()
+    .prepare<[string, string]>(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`)
+    .run(`${HOME_ANIM_KEY_PREFIX}${species}`, name);
+}
+
 // Switch active pet. Validates ownership via the unlocks table — every species
 // the player can become must have been auto-granted (starter) or purchased.
 export function setActiveSpecies(species: Species): { ok: true; species: Species; name: string } | { error: 'not-owned' } {

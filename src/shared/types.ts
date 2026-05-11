@@ -222,6 +222,8 @@ export interface CodelingApi {
   resetEconomyRules(): Promise<{ rules: EconomyRules }>;
   setActiveSpecies(species: Species): Promise<SetActiveSpeciesResponse>;
   getAnimationsCatalog(): Promise<SpeciesAnimationsCatalog>;
+  getHomeAnimation(species: Species): Promise<string>;
+  setHomeAnimation(species: Species, name: string): Promise<{ ok: true; name: string } | { error: 'not-owned' }>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
   getAchievements(): Promise<AchievementView[]>;
