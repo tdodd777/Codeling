@@ -3,6 +3,7 @@ import type { Direction, Species, SpriteManifest } from '@shared/types';
 
 interface Props {
   species: Species;
+  manifest: SpriteManifest | null;      // owner fetches; pass null while loading
   size?: number;
   animation?: string;                   // defaults to 'idle'
   direction?: Direction;                // defaults to 'south'
@@ -11,21 +12,19 @@ interface Props {
 
 export function PetSprite({
   species,
+  manifest,
   size = 96,
   animation = 'idle',
   direction = 'south',
   fps = 6,
 }: Props) {
-  const [manifest, setManifest] = useState<SpriteManifest | null>(null);
   const [frame, setFrame] = useState(0);
   const timer = useRef<number | null>(null);
 
+  // Reset the frame counter on species change so a stale frame from the
+  // previous species doesn't show before the new manifest arrives.
   useEffect(() => {
-    // Reset to a known state on species change so a brief stale frame from
-    // the previous species doesn't show before the new manifest arrives.
-    setManifest(null);
     setFrame(0);
-    window.codeling.getSprites(species).then(setManifest).catch(console.error);
   }, [species]);
 
   const frames = manifest?.animations[animation]?.[direction] ?? null;
@@ -46,10 +45,9 @@ export function PetSprite({
     };
   }, [frames, fps]);
 
-  // Only render the img once a manifest has loaded — the wrapper still
-  // occupies the layout slot so the surrounding UI doesn't jump. The previous
-  // pattern (fallback URL + onError mutate) left a stale visibility:hidden on
-  // the DOM element that survived later src updates.
+  // Only render once a manifest has loaded — the wrapper still occupies the
+  // layout slot. Previous fallback-URL + onError approach left a stale
+  // visibility:hidden on the DOM element across src updates.
   const src = frames?.[frame] ?? manifest?.static;
 
   return (

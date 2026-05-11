@@ -43,9 +43,12 @@ export function Home() {
 
   // Background scenery + manifest is per species. Refetch when the active
   // species changes — also pulls the saved Home animation preference for
-  // that species (defaults to 'idle' when nothing was ever set).
+  // that species (defaults to 'idle' when nothing was ever set). Clear the
+  // manifest to null first so a stale frame from the previous species
+  // doesn't render between species swap and manifest arrival.
   useEffect(() => {
     if (!pet) return;
+    setManifest(null);
     window.codeling
       .getSprites(pet.species)
       .then(setManifest)
@@ -149,7 +152,7 @@ export function Home() {
         className={`pet-stage ${manifest?.background ? 'pet-stage--scenic' : ''}`}
         style={manifest?.background ? { backgroundImage: `url("${manifest.background}")` } : undefined}
       >
-        <PetSprite species={pet.species} size={128} animation={effectiveAnim} />
+        <PetSprite species={pet.species} manifest={manifest} size={128} animation={effectiveAnim} />
       </div>
 
       {pickerOptions.length > 1 && (
