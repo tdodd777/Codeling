@@ -33,10 +33,31 @@ let popout: BrowserWindow | null = null;
 
 export function initPopout(d: PopoutDeps): void {
   deps = d;
-  // Intercept menubar show events — if the popout is alive, route the user
-  // back to it instead of letting the tray panel appear. `after-show` fires
-  // post-render; hiding here causes a brief flicker but keeps the contract
-  // simple (single surface at a time).
+  // Replace menubar's internal tray click handler. We intercept the click
+  // *before* it shows the menubar window so there's no flicker when the
+  // popout is the active surface; in that case we focus the popout instead.
+  // When the popout is closed, fall back to the menubar's default toggle
+  // behavior (show if hidden, hide if visible).
+  const tray = d.mb.tray;
+  if (tray) {
+    tray.removeAllListeners('click');
+    tray.on('click', () => {
+      if (isPopoutOpen() && popout && !popout.isDestroyed()) {
+        if (popout.isMinimized()) popout.restore();
+        popout.show();
+        popout.focus();
+        return;
+      }
+      if (d.mb.window?.isVisible()) {
+        d.mb.hideWindow();
+      } else {
+        d.mb.showWindow();
+      }
+    });
+  }
+  // Safety net for code paths that show the menubar window without going
+  // through tray-click (e.g., programmatic mb.showWindow). Closes the flicker
+  // gap if any such path slips in.
   d.mb.on('after-show', () => {
     if (!isPopoutOpen()) return;
     d.mb.hideWindow();

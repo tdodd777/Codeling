@@ -21,6 +21,10 @@ export function PetSprite({
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
+    // Reset to a known state on species change so a brief stale frame from
+    // the previous species doesn't show before the new manifest arrives.
+    setManifest(null);
+    setFrame(0);
     window.codeling.getSprites(species).then(setManifest).catch(console.error);
   }, [species]);
 
@@ -42,20 +46,23 @@ export function PetSprite({
     };
   }, [frames, fps]);
 
-  const src = frames?.[frame] ?? manifest?.static ?? `./sprites/${species}/south.png`;
+  // Only render the img once a manifest has loaded — the wrapper still
+  // occupies the layout slot so the surrounding UI doesn't jump. The previous
+  // pattern (fallback URL + onError mutate) left a stale visibility:hidden on
+  // the DOM element that survived later src updates.
+  const src = frames?.[frame] ?? manifest?.static;
 
   return (
     <div className="pet-sprite-stack pet-sprite-idle" style={{ width: size, height: size }}>
-      <img
-        className="pet-sprite-base"
-        src={src}
-        alt={species}
-        width={size}
-        height={size}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-        }}
-      />
+      {src && (
+        <img
+          className="pet-sprite-base"
+          src={src}
+          alt={species}
+          width={size}
+          height={size}
+        />
+      )}
     </div>
   );
 }
