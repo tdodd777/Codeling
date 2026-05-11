@@ -59,6 +59,9 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Later (unscoped — pick when relevant)
 
+- **Spin reveal animation — polish.** Current spinner is functional but uninspired. Options to explore: slot-machine-style cycle that decelerates into the result, wheel-of-fortune rotation, glow/burst burst with confetti for legendary tiers. Pick a treatment when next polishing visuals.
+
+
 - **Distribution.** Code signing (macOS notarization, Windows Authenticode — paid certs), auto-updates via Squirrel.Mac / Squirrel.Windows, DMG / MSI / Squirrel installer outputs, Homebrew tap, Scoop manifest, Winget submission.
 - **Robot species art.** David Harrington CC0 robot identified in `sprites.md`; drop-in candidate but not yet integrated.
 - **Four more LuizMelo creatures.** Goblin / skeleton / mushroom / rat already integrated; sources archive in `assets/sources/luizmelo/` has more — quick wins via `scripts/luizmelo-slice.py`.

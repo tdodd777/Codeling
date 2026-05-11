@@ -179,6 +179,20 @@ interface ListProps {
   onSetActive: (species: Species, itemId: string) => void;
 }
 
+// Strip the `species:` prefix from a shop or unlock id. Returns null for any
+// non-species id (upgrades, animations, malformed). Used for thumbnail
+// rendering — only species rows show a sprite preview.
+function speciesFromId(id: string): Species | null {
+  if (!id.startsWith('species:')) return null;
+  return id.slice('species:'.length) as Species;
+}
+
+// Canonical south-rotation thumbnail path. Every species ships
+// rotations/south.png by convention; the manifest scanner uses the same path.
+function spriteThumbUrl(species: Species): string {
+  return `./sprites/${species}/rotations/south.png`;
+}
+
 function SpeciesOrUpgradesList({
   kind,
   unlocks,
@@ -200,8 +214,18 @@ function SpeciesOrUpgradesList({
     <ul className="shop-list">
       {ownedItems.map((u) => {
         const fb = feedback?.itemId === u.itemId ? feedback : null;
+        const species = speciesFromId(u.itemId);
         return (
           <li key={u.itemId} className={`shop-item shop-item--${u.tier}`}>
+            {species && (
+              <img
+                className="shop-item__sprite"
+                src={spriteThumbUrl(species)}
+                alt=""
+                width={48}
+                height={48}
+              />
+            )}
             <div className="shop-item__main">
               <div className="shop-item__title">
                 <span className="shop-item__label">{u.label}</span>
@@ -223,8 +247,18 @@ function SpeciesOrUpgradesList({
         const broke = bits < it.priceBits;
         const isPending = pending === it.id;
         const fb = feedback?.itemId === it.id ? feedback : null;
+        const species = speciesFromId(it.id);
         return (
           <li key={it.id} className={`shop-item shop-item--${it.tier}`}>
+            {species && (
+              <img
+                className="shop-item__sprite shop-item__sprite--locked"
+                src={spriteThumbUrl(species)}
+                alt=""
+                width={48}
+                height={48}
+              />
+            )}
             <div className="shop-item__main">
               <div className="shop-item__title">
                 <span className="shop-item__label">{it.label}</span>

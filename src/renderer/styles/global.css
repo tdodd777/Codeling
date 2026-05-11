@@ -462,6 +462,28 @@ html, body, #root {
   min-width: 0;
 }
 
+.shop-item__sprite {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* Unowned species render as silhouettes — alpha-flatten via brightness(0) so
+   the pixel art collapses to one color, then drop opacity so it reads as
+   "locked / unrevealed". Hover lifts the silhouette slightly so the row
+   still feels interactive. */
+.shop-item__sprite--locked {
+  filter: brightness(0);
+  opacity: 0.35;
+  transition: opacity 120ms ease-out;
+}
+
+.shop-item:hover .shop-item__sprite--locked {
+  opacity: 0.55;
+}
+
 .shop-item__title {
   display: flex;
   align-items: baseline;
