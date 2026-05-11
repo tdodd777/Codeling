@@ -18,6 +18,7 @@
     "setup": "node ./scripts/codeling-cli.mjs install",
     "setup:uninstall": "node ./scripts/codeling-cli.mjs uninstall",
     "setup:status": "node ./scripts/codeling-cli.mjs status",
+    "dev:unlock-all": "node ./scripts/dev-unlock-all.mjs",
     "stop-hook:install": "node ./scripts/install-stop-hook.mjs install",
     "stop-hook:uninstall": "node ./scripts/install-stop-hook.mjs uninstall",
     "stop-hook:status": "node ./scripts/install-stop-hook.mjs status"
