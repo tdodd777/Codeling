@@ -24,6 +24,8 @@ export function Settings() {
   const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [autoLaunch, setAutoLaunch] = useState<boolean | null>(null);
   const [popoutOpen, setPopoutOpen] = useState<boolean>(false);
+  const [telemetry, setTelemetry] = useState<{ enabled: boolean; running: boolean } | null>(null);
+  const [telemetryBusy, setTelemetryBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -48,6 +50,7 @@ export function Settings() {
     refetch();
     window.codeling.getReceiverInfo().then(setReceiver).catch(console.error);
     window.codeling.getAutoLaunch().then(setAutoLaunch).catch(console.error);
+    window.codeling.getTelemetryEnabled().then(setTelemetry).catch(console.error);
     window.codeling
       .getEconomyRules()
       .then(({ rules, bounds }) => {
@@ -83,6 +86,18 @@ export function Settings() {
       return;
     }
     setThresholdError(`Must be between ${res.min} and ${res.max}`);
+  }
+
+  async function toggleTelemetry() {
+    if (!telemetry || telemetryBusy) return;
+    setTelemetryBusy(true);
+    try {
+      const next = !telemetry.enabled;
+      const res = await window.codeling.setTelemetryEnabled(next);
+      setTelemetry(res);
+    } finally {
+      setTelemetryBusy(false);
+    }
   }
 
   async function togglePopout() {
@@ -300,6 +315,28 @@ export function Settings() {
       </Section>
 
       <Section title="Receiver">
+        <div className="setting-row">
+          <div className="setting-row__main">
+            <div className="setting-row__label">Telemetry receivers</div>
+            <div className="setting-row__hint">
+              {telemetry?.enabled
+                ? 'Listening — Claude Code activity feeds XP and bits'
+                : 'Paused — no XP or bits will be earned until re-enabled'}
+            </div>
+          </div>
+          <div className="setting-row__action">
+            <button
+              className={`toggle ${telemetry?.enabled ? 'toggle--on' : ''}`}
+              onClick={toggleTelemetry}
+              disabled={telemetry === null || telemetryBusy}
+              role="switch"
+              aria-checked={!!telemetry?.enabled}
+              title={telemetry?.enabled ? 'Disable both OTLP receivers' : 'Re-enable both OTLP receivers'}
+            >
+              <span className="toggle__thumb" />
+            </button>
+          </div>
+        </div>
         <div className="setting-row setting-row--info">
           <div className="setting-row__label">HTTP endpoint</div>
           <code className="setting-code">{receiver?.http ?? '…'}</code>
@@ -309,7 +346,8 @@ export function Settings() {
           <code className="setting-code">{receiver?.grpc ?? '…'}</code>
         </div>
         <div className="setting-row__hint setting-row__hint--block">
-          Run <code>scripts/install-telemetry.{`{ps1,sh}`}</code> install to point Claude Code at these.
+          Run <code>npm run setup</code> (or <code>npx codeling install</code> once published)
+          to point Claude Code at these endpoints.
         </div>
       </Section>
 

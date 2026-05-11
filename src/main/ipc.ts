@@ -36,6 +36,11 @@ import {
 } from './economy';
 import { events } from './events';
 import { notifyUpdate } from './notify';
+import {
+  getTelemetryEnabled,
+  isReceiversRunning,
+  setTelemetryEnabled,
+} from './otel/lifecycle';
 import { closePopout, isPopoutOpen, openPopout } from './popout';
 import { exportSaveDialog, importSaveDialog } from './save';
 import { getCurrentStreak } from './streaks';
@@ -168,6 +173,15 @@ export function registerIpcHandlers(): void {
     http: 'http://127.0.0.1:4318',
     grpc: 'http://127.0.0.1:4317',
   }));
+  ipcMain.handle('codeling:getTelemetryEnabled', () => ({
+    enabled: getTelemetryEnabled(),
+    running: isReceiversRunning(),
+  }));
+  ipcMain.handle('codeling:setTelemetryEnabled', async (_, enabled: boolean) => {
+    const running = await setTelemetryEnabled(!!enabled);
+    notifyUpdate();
+    return { enabled: !!enabled, running };
+  });
   ipcMain.handle('codeling:getAchievements', () => getAchievementsView());
   ipcMain.handle('codeling:getStreak', () => getCurrentStreak());
   ipcMain.handle('codeling:getAutoLaunch', (): boolean => {

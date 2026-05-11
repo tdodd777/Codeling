@@ -9,8 +9,7 @@ import { getDb, closeDb } from './db/client';
 import { getPet } from './db/repos';
 import { events } from './events';
 import { registerIpcHandlers } from './ipc';
-import { startHttpReceiver } from './otel/http-receiver';
-import { startGrpcReceiver } from './otel/grpc-receiver';
+import { getTelemetryEnabled, startReceivers } from './otel/lifecycle';
 import { initPopout } from './popout';
 
 const TRAY_TARGET_PX = 40;
@@ -182,9 +181,13 @@ async function bootstrap() {
   maybeShowDailySummary();
   registerIpcHandlers();
 
-  // Start both OTLP receivers in parallel; failures shouldn't block the UI.
-  startHttpReceiver().catch((err) => console.error('[otel:http] failed to start', err));
-  startGrpcReceiver().catch((err) => console.error('[otel:grpc] failed to start', err));
+  // Honor the persisted telemetry-enabled flag. Default ON; the Settings
+  // toggle flips this. Failures inside startReceivers don't throw — they log.
+  if (getTelemetryEnabled()) {
+    startReceivers();
+  } else {
+    console.log('[otel] receivers not started — telemetry disabled in Settings');
+  }
 
   // Tooltip shows the pet's name so the user can identify which pet is theirs
   // when multiple Codeling-style apps live in the tray. Falls back to brand if

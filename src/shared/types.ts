@@ -226,6 +226,8 @@ export interface CodelingApi {
   setHomeAnimation(species: Species, name: string): Promise<{ ok: true; name: string } | { error: 'not-owned' }>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
+  getTelemetryEnabled(): Promise<{ enabled: boolean; running: boolean }>;
+  setTelemetryEnabled(enabled: boolean): Promise<{ enabled: boolean; running: boolean }>;
   getAchievements(): Promise<AchievementView[]>;
   getStreak(): Promise<number>;
   getAutoLaunch(): Promise<boolean>;
