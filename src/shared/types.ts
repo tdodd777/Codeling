@@ -9,7 +9,11 @@ export type Species =
   | 'fire_worm'
   | 'martial_hero'
   | 'martial_hero_2'
-  | 'apprentice_wizard';
+  | 'apprentice_wizard'
+  | 'goblin'
+  | 'skeleton'
+  | 'mushroom'
+  | 'rat';
 
 export type Direction =
   | 'north'

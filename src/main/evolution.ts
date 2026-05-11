@@ -22,6 +22,10 @@ export const EVOLUTIONS: Record<Species, readonly number[]> = {
   martial_hero:      [50_000, 200_000, 500_000],
   martial_hero_2:    [50_000, 200_000, 500_000],
   apprentice_wizard: [50_000, 200_000, 500_000],
+  goblin:            [50_000, 200_000, 500_000],
+  skeleton:          [50_000, 200_000, 500_000],
+  mushroom:          [50_000, 200_000, 500_000],
+  rat:               [50_000, 200_000, 500_000],
 };
 
 export function stageForOutputTokens(species: Species, cumulativeOutputTokens: number): number {

@@ -35,9 +35,11 @@ When in doubt, **don't ship raw source PNGs**. Compositing assets into derived s
 | `martial_hero` | [LuizMelo — Martial Hero](https://luizmelo.itch.io/martial-hero) | CC0 | Idle 8f + Running 8f + Jump 2f + Fall 2f + Attack ×2 (6/6) + Hurt 4f + Death 6f — 42 total |
 | `martial_hero_2` | [LuizMelo — Martial Hero 2](https://luizmelo.itch.io/martial-hero-2) | CC0 | Idle 4f + Running 8f + Jump 2f + Fall 2f + Attack ×2 (4/4) + Hurt 3f + Death 7f — 34 total |
 | `apprentice_wizard` | [LuizMelo — Wizard Pack](https://luizmelo.itch.io/wizard-pack) | CC0 (inferred — pack ships without License.txt; matches LuizMelo's consistent practice) | Idle 6f + Running 8f + Jump 2f + Fall 2f + Attack ×2 (8/8) + Hurt 4f + Death 7f — 45 total. **Note**: this pack uses non-square (231×190) frames; the slicer config carries explicit per-anim frame counts for it. |
+| `goblin` | [LuizMelo MCF1 — Goblin](https://luizmelo.itch.io/monsters-creatures-fantasy) | CC0 | Idle 4f + Running 8f + Attack ×3 (8/8/12) + Hurt 4f + Death 4f — 48 total |
+| `skeleton` | [LuizMelo MCF1 — Skeleton](https://luizmelo.itch.io/monsters-creatures-fantasy) | CC0 | Idle 4f + Walking 4f + Attack ×3 (8/8/6) + Shield 4f + Hurt 4f + Death 4f — 42 total |
+| `mushroom` | [LuizMelo MCF1 — Mushroom](https://luizmelo.itch.io/monsters-creatures-fantasy) | CC0 | Idle 4f + Running 8f + Attack ×3 (8/8/11) + Hurt 4f + Death 4f — 47 total |
+| `rat` | [LuizMelo MCF2 — Rat](https://luizmelo.itch.io/monsters-creatures-fantasy-2) | CC0 | Idle 10f + Running 8f + Attack 12f + Hurt 3f + Death 6f — 39 total |
 | `robot` | _none yet_ | — | Listed in `Species` type, no art |
-
-**Pending in `assets/sources/luizmelo/`** (un-integrated but archived): `goblin`, `skeleton`, `mushroom` (MCF1), `rat` (MCF2). Extend `SPECIES` in `scripts/luizmelo-slice.py` and re-run to wire them in.
 
 ---
 

@@ -36,6 +36,10 @@ const TRAY_HEAD_FRACTION: Record<Species, number> = {
   martial_hero: 0.5,       // humanoid kung-fu fighter
   martial_hero_2: 0.5,     // same
   apprentice_wizard: 0.5,  // humanoid, pointy hat reads
+  goblin: 0.55,            // small humanoid, head crop keeps face + ears
+  skeleton: 0.5,           // humanoid skeleton, classic head-up silhouette
+  mushroom: 0.65,          // most of the silhouette is cap — keep more in frame
+  rat: 0.7,                // creature, mostly head + body length
 };
 
 if (!app.requestSingleInstanceLock()) {
