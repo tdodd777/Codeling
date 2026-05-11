@@ -147,6 +147,19 @@ html, body, #root {
   filter: brightness(1.05);
 }
 
+.anim-picker__pill--locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+}
+
+.anim-picker__pill--locked:hover {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
 .pet-meta {
   text-align: center;
   margin-bottom: 16px;
@@ -341,49 +354,26 @@ html, body, #root {
 }
 
 /* Reveal phase — short anticipation before the actual result lands.
-   Tier name cycles through the four rarities; label pulses; border swaps
-   color in step with the tier cycle for a quick "what will it land on?"
-   beat. Duration roughly matches REVEAL_DURATION_MS in Home.tsx. */
-@keyframes spin-rolling-tier {
-  0%, 24%   { transform: translateY(0); }
-  25%, 49%  { transform: translateY(-1.4em); }
-  50%, 74%  { transform: translateY(-2.8em); }
-  75%, 100% { transform: translateY(-4.2em); }
-}
-
-@keyframes spin-rolling-border {
-  0%, 24%   { border-color: #4a4868; }
-  25%, 49%  { border-color: #4d8c5a; }
-  50%, 74%  { border-color: #5e7fc7; }
-  75%, 100% { border-color: #d6a23a; }
-}
-
-@keyframes spin-rolling-label {
-  0%, 100% { opacity: 0.4; }
-  50%      { opacity: 1; }
-}
-
+   Clean circular spinner; no tier preview (we don't know the result tier
+   on the CSS side, and the previous "rolling tier name" mechanism felt
+   half-baked). The real result toast takes over via the existing
+   spin-toast-in keyframe when JS swaps revealPhase to 'result'. */
 .spin-toast--rolling {
-  animation: spin-rolling-border 900ms steps(4, end);
+  border-color: var(--accent-dim);
 }
 
-.spin-toast__tier--rolling {
-  height: 1.4em;
-  overflow: hidden;
-  display: inline-flex;
-  flex-direction: column;
-  line-height: 1.4em;
-  animation: spin-rolling-tier 900ms steps(4, end);
+.spin-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(176, 140, 255, 0.18);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 4px auto 14px;
+  animation: spin-spinner 700ms linear infinite;
 }
 
-.spin-toast__tier-cycle {
-  display: block;
-  height: 1.4em;
-}
-
-.spin-toast__label--rolling {
-  animation: spin-rolling-label 450ms ease-in-out infinite;
-  letter-spacing: 0.3em;
+@keyframes spin-spinner {
+  to { transform: rotate(360deg); }
 }
 
 .spin-toast--common      { border-color: #4a4868; }

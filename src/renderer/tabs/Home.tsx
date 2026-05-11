@@ -62,12 +62,13 @@ export function Home() {
       .catch(console.error);
   }, [pet?.species]);
 
-  // Available picker options = owned animations for the active species from
-  // the catalog. Catalog already dedupes by canonical name.
+  // All animations available on disk for the active species, including
+  // unowned ones — those render as locked pills so the player sees what's
+  // possible and can decide what to buy. Catalog already dedupes by
+  // canonical name.
   const pickerOptions = useMemo<AnimationView[]>(() => {
     if (!pet) return [];
-    const list = animCatalog[pet.species] ?? [];
-    return list.filter((a) => a.owned);
+    return animCatalog[pet.species] ?? [];
   }, [pet?.species, animCatalog]);
 
   // Safety: if the saved preference points to an animation the player no
@@ -183,21 +184,32 @@ export function Home() {
         <PetSprite species={pet.species} manifest={manifest} size={128} animation={effectiveAnim} />
       </div>
 
-      {pickerOptions.length > 1 && (
+      {pickerOptions.length > 0 && (
         <div className="anim-picker" role="radiogroup" aria-label="Pet animation">
-          {pickerOptions.map((opt) => (
-            <button
-              key={opt.name}
-              type="button"
-              role="radio"
-              aria-checked={effectiveAnim === opt.name}
-              className={`anim-picker__pill ${effectiveAnim === opt.name ? 'anim-picker__pill--on' : ''}`}
-              onClick={() => handlePickAnim(opt.name)}
-              title={opt.name}
-            >
-              {opt.name}
-            </button>
-          ))}
+          {pickerOptions.map((opt) => {
+            const isActive = effectiveAnim === opt.name;
+            const tooltip = opt.owned
+              ? opt.name
+              : `${opt.priceBits} bits · Lv ${opt.levelRequired}+ — unlock in Shop`;
+            return (
+              <button
+                key={opt.name}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                className={
+                  'anim-picker__pill' +
+                  (isActive ? ' anim-picker__pill--on' : '') +
+                  (!opt.owned ? ' anim-picker__pill--locked' : '')
+                }
+                onClick={() => opt.owned && handlePickAnim(opt.name)}
+                disabled={!opt.owned}
+                title={tooltip}
+              >
+                {opt.name}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -234,14 +246,8 @@ export function Home() {
         >
           {revealPhase === 'reveal' ? (
             <div className="spin-toast spin-toast--rolling" onClick={(e) => e.stopPropagation()}>
-              <div className="spin-toast__tier spin-toast__tier--rolling">
-                <span className="spin-toast__tier-cycle">common</span>
-                <span className="spin-toast__tier-cycle">uncommon</span>
-                <span className="spin-toast__tier-cycle">rare</span>
-                <span className="spin-toast__tier-cycle">legendary</span>
-              </div>
-              <div className="spin-toast__label spin-toast__label--rolling">…</div>
-              <div className="spin-toast__detail">Spinning</div>
+              <div className="spin-spinner" aria-hidden="true" />
+              <div className="spin-toast__detail">Spinning…</div>
             </div>
           ) : (
             <div
