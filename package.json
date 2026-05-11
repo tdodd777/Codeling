@@ -5,6 +5,17 @@
   "description": "Gamified Claude Code companion that lives in your menu bar.",
   "main": ".vite/build/main.js",
   "private": true,
+  "author": {
+    "name": "Tyler Dodd",
+    "email": "tdodd777@gmail.com",
+    "url": "https://github.com/tdodd777"
+  },
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/tdodd777/Codeling",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tdodd777/Codeling.git"
+  },
   "bin": {
     "codeling": "./scripts/codeling-cli.mjs"
   },
