@@ -28,17 +28,12 @@ export type Direction =
 export interface SpriteManifest {
   static: string; // url to single-frame fallback (always populated)
   animations: Record<string, Partial<Record<Direction, string[]>>>;
-  background?: string; // url to a stage scenery PNG, if the species has one
-  // Per-cosmetic-id, per-direction overlay URLs. Empty record when no
-  // cosmetics/ subdir exists. Renderer composites these atop the base sprite
-  // when the matching item is equipped.
-  cosmeticOverlays: Record<string, Partial<Record<Direction, string>>>;
+  background?: string; // url to per-species scenery PNG, if any
 }
 
 export interface PetState {
   species: Species;
   name: string;
-  evolutionStage: number;
   level: number;
   xp: number;
   bits: number;
@@ -78,11 +73,11 @@ export type Transport = 'http' | 'grpc';
 export type SpinTier = 'common' | 'uncommon' | 'rare' | 'legendary';
 
 export interface SpinResult {
-  reward: { id: string; kind: 'bits' | 'xp' | 'cosmetic'; tier: SpinTier; label: string };
+  reward: { id: string; kind: 'bits' | 'xp' | 'species_token'; tier: SpinTier; label: string };
   applied:
-    | { kind: 'bits'; amount: number; consolationFor?: string }
+    | { kind: 'bits'; amount: number; consolationFor?: 'species_token' }
     | { kind: 'xp'; amount: number; levelsGained: number }
-    | { kind: 'cosmetic'; cosmeticId: string };
+    | { kind: 'species'; species: Species };
   spinsRemaining: number;
 }
 
@@ -93,12 +88,11 @@ export interface UnlockedItem {
   category: string;
   acquiredVia: string;
   acquiredAt: number;
-  equipped: boolean;
   label: string;
   tier: SpinTier;
 }
 
-export type ShopItemKind = 'cosmetic' | 'upgrade';
+export type ShopItemKind = 'species' | 'upgrade';
 
 export interface ShopItemView {
   id: string;
@@ -113,13 +107,14 @@ export type PurchaseResponse =
   | {
       ok: true;
       itemId: string;
-      category: ShopItemKind;
+      category: ShopItemKind | 'animation';
       bitsRemaining: number;
       pricePaid: number;
     }
   | { error: 'unknown-item' }
   | { error: 'insufficient'; bits: number; price: number }
-  | { error: 'already-owned' };
+  | { error: 'already-owned' }
+  | { error: 'level-locked'; required: number; current: number };
 
 export type RenameResponse =
   | { ok: true; name: string }
@@ -169,11 +164,53 @@ export interface AchievementView {
   earnedAt?: number;
 }
 
+export type SetActiveSpeciesResponse =
+  | { ok: true; species: Species; name: string }
+  | { error: 'not-owned' };
+
+export interface AnimationView {
+  id: string;          // `anim:<species>:<name>`
+  species: Species;
+  name: string;        // canonical animation key (e.g., 'run', 'attack', 'death')
+  priceBits: number;
+  levelRequired: number;
+  owned: boolean;
+}
+
+export type SpeciesAnimationsCatalog = Partial<Record<Species, AnimationView[]>>;
+
+// Display + economy metadata for every species. Drives the shop catalog,
+// achievement totals, and any rendered species label. Pricing is bits-based
+// and tier-stratified — common ~200, legendary ~1500. Tune after playtest.
+export interface SpeciesInfo {
+  label: string;
+  tier: SpinTier;
+  priceBits: number;
+}
+
+export const SPECIES_CATALOG: Record<Species, SpeciesInfo> = {
+  wizard:            { label: 'Wizard',            tier: 'common',    priceBits: 200 },
+  slime:             { label: 'Slime',             tier: 'common',    priceBits: 200 },
+  bat:               { label: 'Bat',               tier: 'common',    priceBits: 200 },
+  rat:               { label: 'Rat',               tier: 'common',    priceBits: 200 },
+  mushroom:          { label: 'Mushroom',          tier: 'common',    priceBits: 200 },
+  skeleton:          { label: 'Skeleton',          tier: 'common',    priceBits: 200 },
+  goblin:            { label: 'Goblin',            tier: 'common',    priceBits: 200 },
+  flying_eye:        { label: 'Flying Eye',        tier: 'uncommon',  priceBits: 400 },
+  fire_worm:         { label: 'Fire Worm',         tier: 'uncommon',  priceBits: 400 },
+  mimic:             { label: 'Mimic',             tier: 'rare',      priceBits: 800 },
+  evil_wizard:       { label: 'Evil Wizard',       tier: 'rare',      priceBits: 800 },
+  robot:             { label: 'Robot',             tier: 'rare',      priceBits: 800 },
+  apprentice_wizard: { label: 'Apprentice Wizard', tier: 'rare',      priceBits: 800 },
+  martial_hero:      { label: 'Martial Hero',      tier: 'legendary', priceBits: 1500 },
+  martial_hero_2:    { label: 'Martial Hero II',   tier: 'legendary', priceBits: 1500 },
+};
+
 export interface CodelingApi {
   getPet(): Promise<PetState>;
   getSpinState(): Promise<SpinState>;
   getStats(): Promise<LifetimeStats>;
-  getSprites(species: Species, stage?: number): Promise<SpriteManifest>;
+  getSprites(species: Species): Promise<SpriteManifest>;
   getUnlocks(): Promise<UnlockedItem[]>;
   getShopItems(): Promise<ShopItemView[]>;
   spin(): Promise<SpinResponse>;
@@ -183,7 +220,8 @@ export interface CodelingApi {
   getEconomyRules(): Promise<{ rules: EconomyRules; bounds: EconomyRuleBounds }>;
   setEconomyRule(key: EconomyRuleKey, value: number): Promise<EconomyRuleResponse>;
   resetEconomyRules(): Promise<{ rules: EconomyRules }>;
-  setEquipped(itemId: string, equipped: boolean): Promise<{ ok: true } | { error: 'not-owned' }>;
+  setActiveSpecies(species: Species): Promise<SetActiveSpeciesResponse>;
+  getAnimationsCatalog(): Promise<SpeciesAnimationsCatalog>;
   resetSave(): Promise<{ ok: true }>;
   getReceiverInfo(): Promise<ReceiverInfo>;
   getAchievements(): Promise<AchievementView[]>;

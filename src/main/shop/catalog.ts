@@ -1,13 +1,15 @@
+import { SPECIES_CATALOG, type Species } from '@shared/types';
 import type { Tier } from '../spin/rewards';
 
-// Shop catalog. Cosmetic items in the shop share the `unlocks.item_id` key with
-// wheel-rolled cosmetics so the dedupe in `INSERT OR IGNORE` works regardless
-// of how the player got it. Upgrades use a separate `category` row in unlocks
-// and drive economy/game-loop modifiers.
+// Shop catalog. Two kinds today:
+//   - `species` — collect new pets; bits buy a species, then setActiveSpecies
+//                 swaps which one renders on Home + tray.
+//   - `upgrade` — permanent economy modifiers (2× bits, etc.).
 //
-// Prices are bits-only for now; gem-style premium currency is deferred.
+// Item ids carry their kind as a prefix (`species:<name>`) so the unlocks table
+// stays a single keyspace with category as a coarse facet.
 
-export type ShopItemKind = 'cosmetic' | 'upgrade';
+export type ShopItemKind = 'species' | 'upgrade';
 
 interface BaseItem {
   id: string;
@@ -18,8 +20,9 @@ interface BaseItem {
   tier: Tier;
 }
 
-export interface CosmeticShopItem extends BaseItem {
-  kind: 'cosmetic';
+export interface SpeciesShopItem extends BaseItem {
+  kind: 'species';
+  species: Species;
 }
 
 export interface UpgradeShopItem extends BaseItem {
@@ -29,20 +32,32 @@ export interface UpgradeShopItem extends BaseItem {
   effect: 'bit_multiplier_2x';
 }
 
-export type ShopItem = CosmeticShopItem | UpgradeShopItem;
+export type ShopItem = SpeciesShopItem | UpgradeShopItem;
 
-// Two starter cosmetics to keep the shop non-empty even before art lands. Both
-// reuse the COSMETICS registry — extend `src/main/spin/rewards.ts` when adding
-// new ones so labels render in both shop and "owned" sections.
-export const SHOP_ITEMS: readonly ShopItem[] = [
-  { id: 'glasses',           kind: 'cosmetic', tier: 'common',   priceBits: 100, label: 'Glasses',
-    description: 'Smart-looking spectacles.' },
-  { id: 'witch_hat',         kind: 'cosmetic', tier: 'uncommon', priceBits: 250, label: 'Witch Hat',
-    description: 'Pointed and wide-brimmed.' },
-  { id: 'bit_multiplier_2x', kind: 'upgrade',  tier: 'rare',     priceBits: 500, label: '2× Bits',
+const SPECIES_ITEMS: readonly SpeciesShopItem[] = (
+  Object.entries(SPECIES_CATALOG) as Array<[Species, (typeof SPECIES_CATALOG)[Species]]>
+).map(([species, info]) => ({
+  id: `species:${species}`,
+  kind: 'species' as const,
+  tier: info.tier,
+  priceBits: info.priceBits,
+  label: info.label,
+  species,
+}));
+
+const UPGRADE_ITEMS: readonly UpgradeShopItem[] = [
+  {
+    id: 'bit_multiplier_2x',
+    kind: 'upgrade',
+    tier: 'rare',
+    priceBits: 500,
+    label: '2× Bits',
     description: 'Doubles bits earned from messages and tokens. Permanent.',
-    effect: 'bit_multiplier_2x' },
+    effect: 'bit_multiplier_2x',
+  },
 ];
+
+export const SHOP_ITEMS: readonly ShopItem[] = [...SPECIES_ITEMS, ...UPGRADE_ITEMS];
 
 export function findShopItem(id: string): ShopItem | undefined {
   return SHOP_ITEMS.find((s) => s.id === id);

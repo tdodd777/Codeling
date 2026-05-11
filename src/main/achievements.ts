@@ -1,3 +1,4 @@
+import { SPECIES_CATALOG } from '@shared/types';
 import { getDb } from './db/client';
 import { events } from './events';
 import { getCurrentStreak } from './streaks';
@@ -22,11 +23,13 @@ export interface AchievementDef {
 }
 
 interface Snapshot {
-  pet: { level: number; evolutionStage: number };
+  pet: { level: number };
   totals: { messages: number; outputTokens: number; costUsd: number };
-  unlockCounts: { cosmetic: number; upgrade: number };
+  unlockCounts: { species: number; upgrade: number; animation: number };
   streakDays: number;
 }
+
+const TOTAL_SPECIES = Object.keys(SPECIES_CATALOG).length;
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   // Engagement
@@ -45,17 +48,23 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'level_100', label: 'Master',     description: 'Reach level 100',
     tier: 'gold',   check: (s) => s.pet.level >= 100 },
 
-  // Evolution
-  { id: 'evolve_1', label: 'Glow up',     description: 'First evolution',
-    tier: 'bronze', check: (s) => s.pet.evolutionStage >= 1 },
-  { id: 'evolve_2', label: 'Ascendant',   description: 'Reach evolution stage 2',
-    tier: 'silver', check: (s) => s.pet.evolutionStage >= 2 },
-  { id: 'evolve_3', label: 'Apotheosis',  description: 'Reach evolution stage 3',
-    tier: 'gold',   check: (s) => s.pet.evolutionStage >= 3 },
+  // Collection — own multiple species
+  { id: 'unlock_species_2',  label: 'Collector',    description: 'Own 2 species',
+    tier: 'bronze', check: (s) => s.unlockCounts.species >= 2 },
+  { id: 'unlock_species_5',  label: 'Menagerie',    description: 'Own 5 species',
+    tier: 'silver', check: (s) => s.unlockCounts.species >= 5 },
+  { id: 'unlock_species_all', label: 'Completionist', description: `Own all ${TOTAL_SPECIES} species`,
+    tier: 'gold',   check: (s) => s.unlockCounts.species >= TOTAL_SPECIES },
 
-  // Collection
-  { id: 'first_cosmetic', label: 'Drip',       description: 'Own your first cosmetic',
-    tier: 'bronze', check: (s) => s.unlockCounts.cosmetic >= 1 },
+  // Animations — depth progression per owned species
+  { id: 'first_animation',         label: 'Bringing it to life', description: 'Unlock your first animation',
+    tier: 'bronze', check: (s) => s.unlockCounts.animation >= 1 },
+  { id: 'animation_collector_10',  label: 'Animator',            description: 'Unlock 10 animations',
+    tier: 'silver', check: (s) => s.unlockCounts.animation >= 10 },
+  { id: 'animation_master_25',     label: 'Master Animator',     description: 'Unlock 25 animations',
+    tier: 'gold',   check: (s) => s.unlockCounts.animation >= 25 },
+
+  // Upgrades
   { id: 'first_upgrade',  label: 'Power play', description: 'Buy your first upgrade',
     tier: 'silver', check: (s) => s.unlockCounts.upgrade >= 1 },
 
@@ -77,8 +86,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 function buildSnapshot(): Snapshot {
   const db = getDb();
   const pet = db
-    .prepare<[], { level: number; evolution_stage: number }>(
-      `SELECT level, evolution_stage FROM pet WHERE id = 1`,
+    .prepare<[], { level: number }>(
+      `SELECT level FROM pet WHERE id = 1`,
     )
     .get();
   const totals = db
@@ -95,10 +104,11 @@ function buildSnapshot(): Snapshot {
     )
     .get();
   const counts = db
-    .prepare<[], { cosmetic: number; upgrade: number }>(
+    .prepare<[], { species: number; upgrade: number; animation: number }>(
       `SELECT
-         COALESCE(SUM(CASE WHEN category = 'cosmetic' THEN 1 ELSE 0 END), 0) AS cosmetic,
-         COALESCE(SUM(CASE WHEN category = 'upgrade'  THEN 1 ELSE 0 END), 0) AS upgrade
+         COALESCE(SUM(CASE WHEN category = 'species'   THEN 1 ELSE 0 END), 0) AS species,
+         COALESCE(SUM(CASE WHEN category = 'upgrade'   THEN 1 ELSE 0 END), 0) AS upgrade,
+         COALESCE(SUM(CASE WHEN category = 'animation' THEN 1 ELSE 0 END), 0) AS animation
        FROM unlocks`,
     )
     .get();
@@ -106,7 +116,6 @@ function buildSnapshot(): Snapshot {
   return {
     pet: {
       level: pet?.level ?? 1,
-      evolutionStage: pet?.evolution_stage ?? 0,
     },
     totals: {
       messages: totals?.messages ?? 0,
@@ -114,8 +123,9 @@ function buildSnapshot(): Snapshot {
       costUsd: totals?.cost_usd ?? 0,
     },
     unlockCounts: {
-      cosmetic: counts?.cosmetic ?? 0,
+      species: counts?.species ?? 0,
       upgrade: counts?.upgrade ?? 0,
+      animation: counts?.animation ?? 0,
     },
     streakDays: getCurrentStreak(),
   };

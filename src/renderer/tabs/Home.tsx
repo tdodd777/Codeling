@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { PET_NAME_MAX_LENGTH, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest, type UnlockedItem } from '@shared/types';
+import { PET_NAME_MAX_LENGTH, SPECIES_CATALOG, type PetState, type SpinResponse, type SpinResult, type SpinState, type SpriteManifest } from '@shared/types';
 import { PetSprite } from '../components/PetSprite';
 
 const TOAST_AUTO_DISMISS_MS = 3500;
 
 function describeApplied(result: SpinResult): string {
-  const { applied, reward } = result;
-  if (applied.kind === 'cosmetic') return `${reward.label} unlocked!`;
+  const { applied } = result;
   if (applied.kind === 'xp') {
     const lvl = applied.levelsGained > 0 ? ` (Lv +${applied.levelsGained})` : '';
     return `+${applied.amount} XP${lvl}`;
   }
-  if (applied.consolationFor) return `Already owned — +${applied.amount} bits instead`;
+  if (applied.kind === 'species') {
+    return `${SPECIES_CATALOG[applied.species].label} added to your collection!`;
+  }
+  if (applied.consolationFor === 'species_token') {
+    return `You own them all — +${applied.amount} bits instead`;
+  }
   return `+${applied.amount} bits`;
 }
 
@@ -20,7 +24,6 @@ export function Home() {
   const [spin, setSpin] = useState<SpinState | null>(null);
   const [streak, setStreak] = useState(0);
   const [manifest, setManifest] = useState<SpriteManifest | null>(null);
-  const [equipped, setEquipped] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<SpinResult | null>(null);
   const dismissRef = useRef<number | null>(null);
@@ -30,24 +33,19 @@ export function Home() {
       window.codeling.getPet().then(setPet).catch(console.error);
       window.codeling.getSpinState().then(setSpin).catch(console.error);
       window.codeling.getStreak().then(setStreak).catch(console.error);
-      window.codeling
-        .getUnlocks()
-        .then((u: UnlockedItem[]) => setEquipped(u.filter((x) => x.equipped).map((x) => x.itemId)))
-        .catch(console.error);
     };
     refetch();
     return window.codeling.onUpdate(refetch);
   }, []);
 
-  // Background scenery is per (species, stage). Refetch when either changes —
-  // evolution lands as a pet update which triggers this effect.
+  // Background scenery is per species. Refetch when the active species changes.
   useEffect(() => {
     if (!pet) return;
     window.codeling
-      .getSprites(pet.species, pet.evolutionStage)
+      .getSprites(pet.species)
       .then(setManifest)
       .catch(console.error);
-  }, [pet?.species, pet?.evolutionStage]);
+  }, [pet?.species]);
 
   useEffect(
     () => () => {
@@ -115,12 +113,7 @@ export function Home() {
         className={`pet-stage ${manifest?.background ? 'pet-stage--scenic' : ''}`}
         style={manifest?.background ? { backgroundImage: `url("${manifest.background}")` } : undefined}
       >
-        <PetSprite
-          species={pet.species}
-          stage={pet.evolutionStage}
-          size={128}
-          equippedCosmetics={equipped}
-        />
+        <PetSprite species={pet.species} size={128} />
       </div>
 
       <div className="pet-meta">

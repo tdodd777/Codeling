@@ -103,17 +103,12 @@ html, body, #root {
   animation: pet-float 2.4s ease-in-out infinite;
 }
 
-.pet-sprite-base,
-.pet-sprite-overlay {
+.pet-sprite-base {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-}
-
-.pet-sprite-overlay {
-  pointer-events: none;
 }
 
 .pet-meta {
@@ -456,6 +451,12 @@ html, body, #root {
   border-radius: 5px;
 }
 
+.shop-item__owned--active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .shop-item__equip {
   background: transparent;
   border: 1px solid var(--accent-dim);
@@ -478,18 +479,6 @@ html, body, #root {
   cursor: default;
 }
 
-.shop-item__equip--on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
-}
-
-.shop-item__equip--on:hover:not(:disabled) {
-  color: var(--bg);
-  background: var(--accent);
-  filter: brightness(1.1);
-}
-
 .shop-item__feedback {
   font-size: 10px;
   font-weight: 500;
@@ -497,6 +486,20 @@ html, body, #root {
 
 .shop-item__feedback--success { color: #6dc685; }
 .shop-item__feedback--error   { color: #d68a8a; }
+
+.anim-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.anim-group__header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin: 0 0 6px 4px;
+}
 
 .shop-item--common      { border-left-color: #4a4868; }
 .shop-item--uncommon    { border-left-color: #6dc685; }

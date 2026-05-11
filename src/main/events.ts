@@ -2,13 +2,11 @@ import { EventEmitter } from 'node:events';
 import type { Species } from '@shared/types';
 
 // Singleton main-process event bus — used for in-process cross-module signaling
-// where coupling modules directly would create a tangle (economy → tray, etc.).
+// where coupling modules directly would create a tangle (active-pet swap → tray, etc.).
 // Distinct from the renderer-broadcast `codeling:update` IPC channel.
 
-export interface PetEvolvedEvent {
+export interface PetSpeciesChangedEvent {
   species: Species;
-  fromStage: number;
-  toStage: number;
 }
 
 export interface PetRenamedEvent {
@@ -24,7 +22,7 @@ export interface AchievementEarnedEvent {
 }
 
 interface EventMap {
-  'pet:evolved': [PetEvolvedEvent];
+  'pet:species-changed': [PetSpeciesChangedEvent];
   'pet:renamed': [PetRenamedEvent];
   'pet:reset': [];
   'achievement:earned': [AchievementEarnedEvent];

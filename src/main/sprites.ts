@@ -27,32 +27,32 @@ function animationAliases(rawName: string): string[] {
   return [...aliases];
 }
 
+// Stable canonical name for a folder — what the shop uses as the unlock id
+// suffix (`anim:<species>:<canonicalName>`). Returns one of the friendly
+// category names (idle/run/walk/attack) when the folder maps to a known
+// category; otherwise the cleaned folder name (e.g., 'death', 'hurt', 'attack2').
+// Critical: every folder must map to exactly one canonical name so unlocks +
+// pricing + manifest-filtering stay consistent.
+export function canonicalAnimationName(rawName: string): string {
+  const cleaned = rawName.replace(/-[a-f0-9]{6,}$/i, '').toLowerCase();
+  if (/idle|breath/.test(cleaned)) return 'idle';
+  if (/^run/.test(cleaned)) return 'run';
+  if (/^walk/.test(cleaned)) return 'walk';
+  if (/^(attack|cast|fight|hit)$/.test(cleaned)) return 'attack';
+  return cleaned;
+}
+
 function spritesRoot(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'assets', 'sprites')
     : path.join(app.getAppPath(), 'assets', 'sprites');
 }
 
-// Resolve the sprite directory + URL prefix for a species at a given evolution
-// stage. If `stage_<N>/` exists under the species, use it; otherwise fall back
-// to the species root so a freshly-evolved pet without per-stage art still
-// renders the previous form rather than going invisible.
-export function speciesStageRoot(
-  species: Species,
-  stage: number,
-): { dir: string; urlSegments: string[] } {
-  const base = path.join(spritesRoot(), species);
-  if (stage > 0) {
-    const stageDir = path.join(base, `stage_${stage}`);
-    try {
-      if (fs.statSync(stageDir).isDirectory()) {
-        return { dir: stageDir, urlSegments: ['./sprites', species, `stage_${stage}`] };
-      }
-    } catch {
-      // stage dir missing — fall through to root
-    }
-  }
-  return { dir: base, urlSegments: ['./sprites', species] };
+export function speciesRoot(species: Species): { dir: string; urlSegments: string[] } {
+  return {
+    dir: path.join(spritesRoot(), species),
+    urlSegments: ['./sprites', species],
+  };
 }
 
 function urlFor(urlSegments: string[], ...rest: string[]): string {
@@ -72,49 +72,73 @@ function frameIndex(file: string): number {
   return m && m[1] ? parseInt(m[1], 10) : -1;
 }
 
-// Scenery background lives next to rotations/animations as a single PNG. Stage-
-// specific scenery wins over the species default — e.g., stage_2/background.png
-// (archmage tower) overrides background.png (apprentice quarters) once the pet
-// has evolved that far.
-function findBackground(species: Species, stage: number): string | undefined {
-  const candidates: { dir: string; segments: string[] }[] = [];
-  if (stage > 0) {
-    candidates.push({
-      dir: path.join(spritesRoot(), species, `stage_${stage}`),
-      segments: ['./sprites', species, `stage_${stage}`],
-    });
-  }
-  candidates.push({
-    dir: path.join(spritesRoot(), species),
-    segments: ['./sprites', species],
-  });
-  for (const c of candidates) {
-    const file = path.join(c.dir, 'background.png');
-    try {
-      if (fs.statSync(file).isFile()) {
-        return [...c.segments, 'background.png'].join('/');
-      }
-    } catch {
-      // missing — try next
+function findBackground(species: Species): string | undefined {
+  const file = path.join(spritesRoot(), species, 'background.png');
+  try {
+    if (fs.statSync(file).isFile()) {
+      return ['./sprites', species, 'background.png'].join('/');
     }
+  } catch {
+    // missing
   }
   return undefined;
 }
 
-export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest {
-  const { dir: root, urlSegments } = speciesStageRoot(species, stage);
+// Lists the set of canonical animation names available on disk for a species,
+// e.g., ['idle', 'run', 'attack', 'attack2', 'death', 'hurt']. Used by the
+// animation catalog IPC to populate the shop.
+export function listSpeciesAnimations(species: Species): string[] {
+  const { dir: root } = speciesRoot(species);
+  const names = new Set<string>();
+  for (const animFolder of listIfDir(path.join(root, 'animations'))) {
+    const animPath = path.join(root, 'animations', animFolder);
+    try {
+      if (!fs.statSync(animPath).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    names.add(canonicalAnimationName(animFolder));
+  }
+  // Flat-layout (no animations/ subdir): every subdir of the species root is
+  // an animation when it isn't a known structural folder.
+  if (!fs.existsSync(path.join(root, 'animations'))) {
+    for (const entry of listIfDir(root)) {
+      if (entry === 'rotations' || entry === 'metadata.json') continue;
+      try {
+        if (fs.statSync(path.join(root, entry)).isDirectory()) {
+          names.add(canonicalAnimationName(entry));
+        }
+      } catch {
+        // skip
+      }
+    }
+  }
+  return [...names];
+}
+
+// `unlocked`: when provided, the scanner skips animation folders whose
+// canonical name isn't in the set. `idle` and `static` always pass through —
+// they're the always-free baseline that every owned species ships with.
+export function buildSpriteManifest(species: Species, unlocked?: ReadonlySet<string>): SpriteManifest {
+  const { dir: root, urlSegments } = speciesRoot(species);
   const manifest: SpriteManifest = {
     static: urlFor(urlSegments, 'rotations', 'south.png'),
     animations: {},
-    cosmeticOverlays: {},
   };
-  const background = findBackground(species, stage);
+  const background = findBackground(species);
   if (background) manifest.background = background;
 
   if (!fs.existsSync(root)) {
-    console.warn(`[sprites] no sprite directory for ${species} stage ${stage} at ${root}`);
+    console.warn(`[sprites] no sprite directory for ${species} at ${root}`);
     return manifest;
   }
+
+  const isUnlocked = (folderName: string): boolean => {
+    if (!unlocked) return true;
+    const canonical = canonicalAnimationName(folderName);
+    if (canonical === 'idle') return true; // always free
+    return unlocked.has(canonical);
+  };
 
   // 1. rotations/ — single-frame static images per direction.
   for (const file of listIfDir(path.join(root, 'rotations'))) {
@@ -135,6 +159,7 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
   for (const animFolder of listIfDir(path.join(root, 'animations'))) {
     const animPath = path.join(root, 'animations', animFolder);
     if (!fs.statSync(animPath).isDirectory()) continue;
+    if (!isUnlocked(animFolder)) continue;
 
     const directions: Partial<Record<Direction, string[]>> = {};
     for (const dirName of listIfDir(animPath)) {
@@ -158,10 +183,10 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
 
   // 3. Backwards-compat: flat layout (<animation>/<direction>_<frame>.png).
   for (const entry of listIfDir(root)) {
-    if (entry === 'rotations' || entry === 'animations' || entry === 'cosmetics' || entry === 'metadata.json') continue;
-    if (/^stage_\d+$/.test(entry)) continue; // stage subdirs are scanned via their own buildSpriteManifest call
+    if (entry === 'rotations' || entry === 'animations' || entry === 'metadata.json') continue;
     const dir = path.join(root, entry);
     if (!fs.statSync(dir).isDirectory()) continue;
+    if (!isUnlocked(entry)) continue;
     const directions: Partial<Record<Direction, string[]>> = {};
     for (const file of listIfDir(dir)) {
       if (!file.toLowerCase().endsWith('.png')) continue;
@@ -179,29 +204,6 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
     }
   }
 
-  // 4. cosmetics/<cosmeticId>/<direction>.png — equipped overlay sprites.
-  // Same direction-aliasing rules as rotations/ (south.png, etc.). Renderer
-  // composites the matching direction over the base sprite when the player
-  // equips this cosmetic.
-  const cosmeticsRoot = path.join(root, 'cosmetics');
-  for (const id of listIfDir(cosmeticsRoot)) {
-    const idDir = path.join(cosmeticsRoot, id);
-    try {
-      if (!fs.statSync(idDir).isDirectory()) continue;
-    } catch {
-      continue;
-    }
-    const dirs: Partial<Record<Direction, string>> = {};
-    for (const file of listIfDir(idDir)) {
-      if (!file.toLowerCase().endsWith('.png')) continue;
-      const base = file.replace(/\.png$/i, '').toLowerCase();
-      const direction = DIRECTION_ALIASES[base];
-      if (!direction) continue;
-      dirs[direction] = urlFor(urlSegments, 'cosmetics', id, file);
-    }
-    if (Object.keys(dirs).length > 0) manifest.cosmeticOverlays[id] = dirs;
-  }
-
   const summary = Object.entries(manifest.animations)
     .map(
       ([name, dirs]) =>
@@ -210,7 +212,7 @@ export function buildSpriteManifest(species: Species, stage = 0): SpriteManifest
           .join(',')})`,
     )
     .join(' ');
-  console.log(`[sprites] ${species} stage ${stage}: ${summary || '(only static fallback)'}`);
+  console.log(`[sprites] ${species}: ${summary || '(only static fallback)'}`);
 
   return manifest;
 }

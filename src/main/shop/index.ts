@@ -1,6 +1,7 @@
 import { evaluateAchievements } from '../achievements';
 import { getDb } from '../db/client';
-import { findShopItem } from './catalog';
+import { buildAnimationShopItem, ANIMATION_ID_PREFIX, type AnimationShopItem } from './animations';
+import { findShopItem, type ShopItemKind, type ShopItem } from './catalog';
 
 // Purchase outcome. Distinct error codes so the renderer can show the right
 // message — the UI also gates the button proactively (disabled when broke or
@@ -8,7 +9,7 @@ import { findShopItem } from './catalog';
 export interface PurchaseSuccess {
   ok: true;
   itemId: string;
-  category: 'cosmetic' | 'upgrade';
+  category: ShopItemKind | 'animation';
   bitsRemaining: number;
   pricePaid: number;
 }
@@ -16,12 +17,23 @@ export interface PurchaseSuccess {
 export type PurchaseError =
   | { error: 'unknown-item' }
   | { error: 'insufficient'; bits: number; price: number }
-  | { error: 'already-owned' };
+  | { error: 'already-owned' }
+  | { error: 'level-locked'; required: number; current: number };
 
 export type PurchaseResponse = PurchaseSuccess | PurchaseError;
 
+// Locate the shop item by id, treating `anim:*` as a synthetic dynamic catalog
+// (computed from sprite-manifest scan + owned species). Returns null if
+// nothing resolves — caller maps to `unknown-item`.
+function resolveShopItem(itemId: string): ShopItem | AnimationShopItem | null {
+  if (itemId.startsWith(ANIMATION_ID_PREFIX)) {
+    return buildAnimationShopItem(itemId);
+  }
+  return findShopItem(itemId) ?? null;
+}
+
 export function performPurchase(itemId: string): PurchaseResponse {
-  const item = findShopItem(itemId);
+  const item = resolveShopItem(itemId);
   if (!item) return { error: 'unknown-item' };
 
   const db = getDb();
@@ -36,8 +48,18 @@ export function performPurchase(itemId: string): PurchaseResponse {
       return;
     }
 
-    const pet = db.prepare<[], { bits: number }>(`SELECT bits FROM pet WHERE id = 1`).get();
+    const pet = db.prepare<[], { level: number; bits: number }>(
+      `SELECT level, bits FROM pet WHERE id = 1`,
+    ).get();
     if (!pet) throw new Error('pet row missing');
+
+    // Level gate for animations — bits-cheap but XP-deep. Other item kinds
+    // have no level requirement today (priceBits acts as the throttle).
+    if (item.kind === 'animation' && pet.level < item.levelRequired) {
+      outcome = { error: 'level-locked', required: item.levelRequired, current: pet.level };
+      return;
+    }
+
     if (pet.bits < item.priceBits) {
       outcome = { error: 'insufficient', bits: pet.bits, price: item.priceBits };
       return;
@@ -58,7 +80,8 @@ export function performPurchase(itemId: string): PurchaseResponse {
   });
   tx();
 
-  // First-cosmetic / first-upgrade / etc. flip on purchase. Eval outside the txn.
+  // first-species / first-upgrade / first-animation flip on purchase. Eval
+  // outside the txn.
   if ('ok' in outcome) evaluateAchievements();
 
   return outcome;

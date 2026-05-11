@@ -1,5 +1,6 @@
 import { app, ipcMain } from 'electron';
 import {
+  SPECIES_CATALOG,
   SPIN_THRESHOLD_MAX,
   SPIN_THRESHOLD_MIN,
   type EconomyRuleKey,
@@ -7,12 +8,24 @@ import {
   type PurchaseResponse,
   type ReceiverInfo,
   type RenameResponse,
+  type SetActiveSpeciesResponse,
   type ShopItemView,
   type Species,
   type SpinResponse,
   type SpinThresholdResponse,
 } from '@shared/types';
-import { getAchievementsView, getLifetimeStats, getPet, getSpinState, getUnlocks, renamePet, resetSave, setEquipped, setSpinThreshold } from './db/repos';
+import {
+  getAchievementsView,
+  getLifetimeStats,
+  getPet,
+  getSpinState,
+  getUnlocks,
+  renamePet,
+  resetSave,
+  setActiveSpecies,
+  setSpinThreshold,
+} from './db/repos';
+import { getDb } from './db/client';
 import {
   ECONOMY_RULE_BOUNDS,
   getEconomyRules,
@@ -23,6 +36,7 @@ import { events } from './events';
 import { notifyUpdate } from './notify';
 import { exportSaveDialog, importSaveDialog } from './save';
 import { getCurrentStreak } from './streaks';
+import { getAnimationsCatalog, getOwnedAnimationNames } from './shop/animations';
 import { SHOP_ITEMS } from './shop/catalog';
 import { performPurchase } from './shop';
 import { performSpin } from './spin';
@@ -32,22 +46,35 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('codeling:getPet', () => getPet());
   ipcMain.handle('codeling:getSpinState', () => getSpinState());
   ipcMain.handle('codeling:getStats', () => getLifetimeStats());
-  ipcMain.handle('codeling:getSprites', (_, species: Species, stage?: number) =>
-    buildSpriteManifest(species, stage ?? 0),
-  );
+  ipcMain.handle('codeling:getSprites', (_, species: Species) => {
+    // Manifest gets pruned to the player's owned animations for this species.
+    // Idle + static always pass through (free baseline). Renderer stays dumb —
+    // it just plays whatever the manifest hands back.
+    const unlocked = getOwnedAnimationNames(species);
+    return buildSpriteManifest(species, unlocked);
+  });
+  ipcMain.handle('codeling:getAnimationsCatalog', () => getAnimationsCatalog());
   ipcMain.handle('codeling:getUnlocks', () => getUnlocks());
-  ipcMain.handle('codeling:getShopItems', (): ShopItemView[] =>
-    // SHOP_ITEMS carries an `effect` field for upgrades; strip it before
+  ipcMain.handle('codeling:getShopItems', (): ShopItemView[] => {
+    // Owned species drop out of the buyable list — they'll appear in the
+    // species tab via the unlocks query side, marked Active/Set-Active.
+    const ownedIds = new Set(
+      getDb()
+        .prepare<[], { item_id: string }>(`SELECT item_id FROM unlocks`)
+        .all()
+        .map((r) => r.item_id),
+    );
+    // SHOP_ITEMS carries an `effect` / `species` field; strip them before
     // crossing IPC to keep the shared view type narrow.
-    SHOP_ITEMS.map((s) => ({
+    return SHOP_ITEMS.filter((s) => !ownedIds.has(s.id)).map((s) => ({
       id: s.id,
       kind: s.kind,
       priceBits: s.priceBits,
       label: s.label,
       description: s.description,
       tier: s.tier,
-    })),
-  );
+    }));
+  });
   ipcMain.handle('codeling:spin', (): SpinResponse => {
     const result = performSpin();
     // Spin always touches state if it succeeded (pet bits/xp or unlocks list,
@@ -97,15 +124,24 @@ export function registerIpcHandlers(): void {
     notifyUpdate();
     return { rules };
   });
-  ipcMain.handle('codeling:setEquipped', (_, itemId: string, equipped: boolean) => {
-    const result = setEquipped(itemId, !!equipped);
-    if ('ok' in result) notifyUpdate();
+  ipcMain.handle('codeling:setActiveSpecies', (_, raw: unknown): SetActiveSpeciesResponse => {
+    const species = String(raw) as Species;
+    if (!(species in SPECIES_CATALOG)) return { error: 'not-owned' };
+    const result = setActiveSpecies(species);
+    if ('ok' in result) {
+      events.emit('pet:species-changed', { species });
+      notifyUpdate();
+    }
     return result;
   });
   ipcMain.handle('codeling:resetSave', (): { ok: true } => {
     resetSave();
     events.emit('pet:reset');
-    events.emit('pet:renamed', { name: 'Wizard' });
+    try {
+      events.emit('pet:renamed', { name: getPet().name });
+    } catch {
+      /* pet read can fail in rare edge cases — ignore */
+    }
     notifyUpdate();
     return { ok: true };
   });
@@ -129,7 +165,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('codeling:importSave', async () => {
     const res = await importSaveDialog();
     if ('ok' in res) {
-      // Tray needs to refresh for the imported pet's species/stage; emit the
+      // Tray needs to refresh for the imported pet's species; emit the
       // same events resetSave does so all the same listeners fire.
       events.emit('pet:reset');
       try {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONSOLATION_BITS, drawReward, REWARDS } from './rewards';
+import { drawReward, REWARDS } from './rewards';
 
 // Seeded RNG: a tiny LCG so we can write deterministic distribution tests
 // without bringing in seedrandom. Quality is poor in absolute terms but
@@ -29,7 +29,7 @@ describe('drawReward', () => {
 
   it('respects weight ordering across many draws', () => {
     // The first reward (`bits_small`, weight 40) should land more often than
-    // the last reward (legendary cosmetic, weight 2) over a healthy sample.
+    // the rarest legendary (weight 1) over a healthy sample.
     const counts = new Map<string, number>();
     const rng = lcg(2026_05_10);
     for (let i = 0; i < 5000; i++) {
@@ -37,21 +37,13 @@ describe('drawReward', () => {
       counts.set(r.id, (counts.get(r.id) ?? 0) + 1);
     }
     const small = counts.get('bits_small') ?? 0;
-    const crown = counts.get('cos_crown') ?? 0;
-    expect(small).toBeGreaterThan(crown * 4); // weight 40 vs 2 — generous margin
+    const jackpot = counts.get('bits_jackpot') ?? 0;
+    expect(small).toBeGreaterThan(jackpot * 8); // weight 40 vs 1 — generous margin
   });
 
   it('handles RNG returning a value at the upper edge', () => {
     // rng() ≈ 1 should still produce a valid reward (numerical edge case).
     const r = drawReward(() => 0.999_999_999);
     expect(REWARDS.some((d) => d.id === r.id)).toBe(true);
-  });
-});
-
-describe('CONSOLATION_BITS', () => {
-  it('scales monotonically with tier rarity', () => {
-    expect(CONSOLATION_BITS.common).toBeLessThan(CONSOLATION_BITS.uncommon);
-    expect(CONSOLATION_BITS.uncommon).toBeLessThan(CONSOLATION_BITS.rare);
-    expect(CONSOLATION_BITS.rare).toBeLessThan(CONSOLATION_BITS.legendary);
   });
 });

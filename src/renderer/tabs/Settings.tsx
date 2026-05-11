@@ -296,7 +296,7 @@ export function Settings() {
         ) : (
           <div className="danger-confirm">
             <div className="danger-confirm__msg">
-              This wipes pet, sessions, unlocks, and event log. Default wizard returns. <strong>Cannot be undone.</strong>
+              This wipes pet, sessions, unlocks, and event log. A new random starter species is picked. <strong>Cannot be undone.</strong>
             </div>
             <div className="danger-confirm__actions">
               <button className="danger-btn" onClick={performReset} disabled={resetting}>

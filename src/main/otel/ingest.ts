@@ -34,7 +34,7 @@ export function ingest(signalType: SignalType, transport: Transport, payload: un
   }
   const econ = applyEconomy({ messages: totals.message_count, outputTokens: totals.output_tokens });
   // Achievements are state-derived; one eval per ingest tick covers level,
-  // evolution, message-count, streak, and cost milestones in one pass.
+  // message-count, streak, and cost milestones in one pass.
   if (econ.changed || ops.length > 0) evaluateAchievements();
 
   const summary = summarize(signalType, payload);
@@ -43,8 +43,7 @@ export function ingest(signalType: SignalType, transport: Transport, payload: un
     econ.changed
       ? ` | +xp=${econ.xpGained} +bits=${econ.bitsGained}` +
         (econ.levelsGained ? ` +levels=${econ.levelsGained}` : '') +
-        (econ.spinsGranted ? ` +spins=${econ.spinsGranted}` : '') +
-        (econ.evolved ? ` evolved=stage_${econ.newStage}` : '')
+        (econ.spinsGranted ? ` +spins=${econ.spinsGranted}` : '')
       : '';
   console.log(`[otel:${transport}] ${signalType} ${summary}${opsSummary}${econSummary}`);
 

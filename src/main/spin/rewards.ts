@@ -1,9 +1,7 @@
-// Spin wheel reward catalog. Tiers drive both visual treatment in the toast and
-// the consolation amount when a cosmetic is rolled but already owned.
+// Spin wheel reward catalog. Bits + XP for now; species-unlock tokens (rare)
+// land in M2. Tiers drive visual treatment in the toast.
 //
-// Rebalance freely — weights are relative, the draw normalizes them. Total weight
-// across all rewards roughly correlates to perceived rarity; legendary at 1/100
-// is rare enough to feel exciting without being mythical.
+// Rebalance freely — weights are relative, the draw normalizes them.
 
 export type Tier = 'common' | 'uncommon' | 'rare' | 'legendary';
 
@@ -17,7 +15,7 @@ interface Base {
 export type Reward =
   | (Base & { kind: 'bits'; amount: number })
   | (Base & { kind: 'xp'; amount: number })
-  | (Base & { kind: 'cosmetic'; cosmeticId: string; description?: string });
+  | (Base & { kind: 'species_token' });
 
 export const REWARDS: readonly Reward[] = [
   // bits drops — the bread and butter
@@ -30,40 +28,16 @@ export const REWARDS: readonly Reward[] = [
   { id: 'xp_small', kind: 'xp', tier: 'uncommon', weight: 12, amount: 50,  label: '+50 XP' },
   { id: 'xp_large', kind: 'xp', tier: 'rare',     weight: 3,  amount: 200, label: '+200 XP' },
 
-  // cosmetics — wheel-exclusive for now; shop catalog will introduce paid ones in M1.4
-  { id: 'cos_party_hat', kind: 'cosmetic', tier: 'uncommon',  weight: 8, cosmeticId: 'party_hat', label: 'Party Hat' },
-  { id: 'cos_monocle',   kind: 'cosmetic', tier: 'rare',      weight: 4, cosmeticId: 'monocle',   label: 'Monocle' },
-  { id: 'cos_crown',     kind: 'cosmetic', tier: 'legendary', weight: 2, cosmeticId: 'crown',     label: 'Royal Crown' },
+  // Rare species unlock token — picks a random unowned species. Weight 1 keeps
+  // it at roughly 1.2% of all spins (1 / 81 total weight). If the player owns
+  // every species, the token converts to consolation bits in the handler.
+  { id: 'species_token', kind: 'species_token', tier: 'legendary', weight: 1, label: 'New Species!' },
 ];
 
-export interface CosmeticDef {
-  label: string;
-  description?: string;
-  tier: Tier;
-}
-
-// Authoritative cosmetic registry — keyed by the value stored in unlocks.item_id.
-// The Shop's "owned" section resolves item_id → label/tier through this map.
-// Includes both wheel-rolled and shop-buyable cosmetics; the SHOP_ITEMS list in
-// shop/catalog.ts references entries here by id.
-export const COSMETICS: Record<string, CosmeticDef> = {
-  // wheel-rolled
-  party_hat: { label: 'Party Hat',   tier: 'uncommon' },
-  monocle:   { label: 'Monocle',     tier: 'rare' },
-  crown:     { label: 'Royal Crown', tier: 'legendary' },
-  // shop-buyable
-  glasses:   { label: 'Glasses',     tier: 'common' },
-  witch_hat: { label: 'Witch Hat',   tier: 'uncommon' },
-};
-
-// Bits handed out when a cosmetic roll lands on something the pet already owns.
-// Scales with tier so a duplicated legendary still feels like a win.
-export const CONSOLATION_BITS: Record<Tier, number> = {
-  common: 10,
-  uncommon: 25,
-  rare: 75,
-  legendary: 250,
-};
+// Consolation bits for when a species_token lands but every species is owned.
+// Matches the legendary tier — the rarity of the draw should still feel
+// rewarding even when it can't pay out as a unique unlock.
+export const SPECIES_TOKEN_CONSOLATION_BITS = 500;
 
 // Weighted draw. `rng` is injectable for tests; defaults to Math.random.
 export function drawReward(rng: () => number = Math.random): Reward {

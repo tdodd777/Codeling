@@ -1,7 +1,19 @@
-import { PET_NAME_MAX_LENGTH, SPIN_THRESHOLD_MAX, SPIN_THRESHOLD_MIN, type AchievementView, type LifetimeStats, type PetState, type SignalType, type SpinState, type Transport, type UnlockedItem } from '@shared/types';
+import {
+  PET_NAME_MAX_LENGTH,
+  SPECIES_CATALOG,
+  SPIN_THRESHOLD_MAX,
+  SPIN_THRESHOLD_MIN,
+  type AchievementView,
+  type LifetimeStats,
+  type PetState,
+  type SignalType,
+  type SpinState,
+  type Transport,
+  type UnlockedItem,
+  type Species,
+} from '@shared/types';
 import { ACHIEVEMENTS } from '../achievements';
 import type { SessionField, SessionOp } from '../otel/aggregator';
-import { COSMETICS } from '../spin/rewards';
 import { getDb, seedDefaults } from './client';
 
 const VALID_FIELDS: ReadonlySet<SessionField> = new Set([
@@ -16,7 +28,6 @@ const VALID_FIELDS: ReadonlySet<SessionField> = new Set([
 interface PetRow {
   species: string;
   name: string;
-  evolution_stage: number;
   level: number;
   xp: number;
   bits: number;
@@ -35,12 +46,27 @@ export function getPet(): PetState {
   return {
     species: row.species as PetState['species'],
     name: row.name,
-    evolutionStage: row.evolution_stage,
     level: row.level,
     xp: row.xp,
     bits: row.bits,
     createdAt: row.created_at,
   };
+}
+
+// Switch active pet. Validates ownership via the unlocks table — every species
+// the player can become must have been auto-granted (starter) or purchased.
+export function setActiveSpecies(species: Species): { ok: true; species: Species; name: string } | { error: 'not-owned' } {
+  if (!(species in SPECIES_CATALOG)) return { error: 'not-owned' };
+  const db = getDb();
+  const owned = db
+    .prepare<[string], { item_id: string }>(
+      `SELECT item_id FROM unlocks WHERE category = 'species' AND item_id = ?`,
+    )
+    .get(`species:${species}`);
+  if (!owned) return { error: 'not-owned' };
+  db.prepare<[string]>(`UPDATE pet SET species = ? WHERE id = 1`).run(species);
+  const pet = getPet();
+  return { ok: true, species, name: pet.name };
 }
 
 // Spin threshold range constants live in shared/types.ts so renderer + main agree.
@@ -130,55 +156,32 @@ interface UnlockRow {
   category: string;
   acquired_via: string;
   acquired_at: number;
-  equipped: number;
-}
-
-// Equip / unequip a cosmetic. Mutex per category — only one cosmetic active at
-// a time for now. When art arrives with explicit slots (head, eye, body),
-// extend this to mutex by slot rather than the whole category.
-export function setEquipped(itemId: string, equipped: boolean): { ok: true } | { error: 'not-owned' } {
-  const db = getDb();
-  let outcome: { ok: true } | { error: 'not-owned' } = { error: 'not-owned' };
-  const tx = db.transaction(() => {
-    const row = db
-      .prepare<[string], { category: string }>(
-        `SELECT category FROM unlocks WHERE item_id = ?`,
-      )
-      .get(itemId);
-    if (!row) {
-      outcome = { error: 'not-owned' };
-      return;
-    }
-    if (equipped) {
-      db.prepare<[string]>(
-        `UPDATE unlocks SET equipped = 0 WHERE category = ?`,
-      ).run(row.category);
-      db.prepare<[string]>(`UPDATE unlocks SET equipped = 1 WHERE item_id = ?`).run(itemId);
-    } else {
-      db.prepare<[string]>(`UPDATE unlocks SET equipped = 0 WHERE item_id = ?`).run(itemId);
-    }
-    outcome = { ok: true };
-  });
-  tx();
-  return outcome;
 }
 
 export function getUnlocks(): UnlockedItem[] {
   const rows = getDb()
-    .prepare<[], UnlockRow>(`SELECT * FROM unlocks ORDER BY acquired_at DESC`)
+    .prepare<[], UnlockRow>(
+      `SELECT item_id, category, acquired_via, acquired_at FROM unlocks ORDER BY acquired_at DESC`,
+    )
     .all();
   return rows.map((r) => {
-    // Cosmetic catalog is the source of truth for label/tier; if an item somehow
-    // lands here without a registry entry (legacy save?), fall back gracefully.
-    const def = COSMETICS[r.item_id];
+    let label = r.item_id;
+    let tier: UnlockedItem['tier'] = 'common';
+    if (r.category === 'species' && r.item_id.startsWith('species:')) {
+      const species = r.item_id.slice('species:'.length) as Species;
+      const info = SPECIES_CATALOG[species];
+      if (info) {
+        label = info.label;
+        tier = info.tier;
+      }
+    }
     return {
       itemId: r.item_id,
       category: r.category,
       acquiredVia: r.acquired_via,
       acquiredAt: r.acquired_at,
-      equipped: r.equipped !== 0,
-      label: def?.label ?? r.item_id,
-      tier: def?.tier ?? 'common',
+      label,
+      tier,
     };
   });
 }

@@ -109,24 +109,17 @@ function processForTray(img: NativeImage, species: Species): NativeImage {
   });
 }
 
-// Resolve the on-disk sprite root for a species at a given stage. Mirrors the
-// renderer-side `speciesStageRoot` (sprites.ts) — falls back to the species
-// root if the stage subdir doesn't exist, so a pet that just evolved still
-// renders the previous form rather than going blank.
-function spriteStageDir(species: Species, stage: number): string {
-  const base = path.join(assetsRoot(), 'sprites', species);
-  if (stage > 0) {
-    const stageDir = path.join(base, `stage_${stage}`);
-    if (fs.existsSync(stageDir) && fs.statSync(stageDir).isDirectory()) return stageDir;
-  }
-  return base;
+// Resolve the on-disk sprite root for a species. Mirrors the renderer-side
+// `speciesRoot` (sprites.ts).
+function spriteDir(species: Species): string {
+  return path.join(assetsRoot(), 'sprites', species);
 }
 
 function trayIcon(): NativeImage {
   // Prefer the current pet's south rotation so the tray reflects what's in the panel.
   try {
     const pet = getPet();
-    const root = spriteStageDir(pet.species, pet.evolutionStage);
+    const root = spriteDir(pet.species);
     const speciesIcon = path.join(root, 'rotations', 'south.png');
     if (fs.existsSync(speciesIcon)) {
       return processForTray(nativeImage.createFromPath(speciesIcon), pet.species);
@@ -143,8 +136,8 @@ function trayIcon(): NativeImage {
 
 // Pre-render every idle frame at boot so the animation loop is just an array swap,
 // not a disk read + decode + crop on each tick.
-function buildIdleTrayFrames(species: Species, stage: number): NativeImage[] {
-  const animDir = path.join(spriteStageDir(species, stage), 'animations');
+function buildIdleTrayFrames(species: Species): NativeImage[] {
+  const animDir = path.join(spriteDir(species), 'animations');
   if (!fs.existsSync(animDir)) return [];
   const idleFolder = fs
     .readdirSync(animDir)
@@ -243,22 +236,19 @@ async function bootstrap() {
       trayTimer = null;
     }
     let species: Species;
-    let stage: number;
     try {
-      const pet = getPet();
-      species = pet.species;
-      stage = pet.evolutionStage;
+      species = getPet().species;
     } catch {
       return;
     }
-    // Always refresh the static icon first so an evolution lands visibly even
-    // when the new stage has only a still rotation and no idle frames.
+    // Refresh the static icon first so a species swap lands visibly even
+    // when the new species has only a still rotation and no idle frames.
     if (mb.tray && !mb.tray.isDestroyed()) {
       mb.tray.setImage(trayIcon());
     }
-    const frames = buildIdleTrayFrames(species, stage);
+    const frames = buildIdleTrayFrames(species);
     if (frames.length <= 1) return; // no animation available — keep static icon
-    console.log(`[tray] animating ${frames.length} idle frames at ${TRAY_FPS} fps (stage ${stage})`);
+    console.log(`[tray] animating ${frames.length} idle frames at ${TRAY_FPS} fps (${species})`);
     let i = 0;
     trayTimer = setInterval(() => {
       if (!mb.tray || mb.tray.isDestroyed()) {
@@ -273,8 +263,8 @@ async function bootstrap() {
     }, Math.round(1000 / TRAY_FPS));
   }
 
-  events.on('pet:evolved', (e) => {
-    console.log(`[tray] pet evolved ${e.species} stage_${e.fromStage} → stage_${e.toStage}; refreshing`);
+  events.on('pet:species-changed', (e) => {
+    console.log(`[tray] active species changed → ${e.species}; refreshing`);
     startTrayAnimation();
   });
 

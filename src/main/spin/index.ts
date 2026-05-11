@@ -1,16 +1,17 @@
+import { SPECIES_CATALOG, type Species } from '@shared/types';
 import { evaluateAchievements } from '../achievements';
 import { getDb } from '../db/client';
 import { RULES } from '../economy';
-import { CONSOLATION_BITS, drawReward, type Reward, type Tier } from './rewards';
+import { drawReward, SPECIES_TOKEN_CONSOLATION_BITS, type Reward, type Tier } from './rewards';
 
 // Result handed back to the renderer. `applied` describes what actually happened
-// (separate from `reward` because a duplicate cosmetic falls back to bits).
+// — for species_token, `applied` may degrade to bits if all species are owned.
 export interface SpinResult {
   reward: { id: string; kind: Reward['kind']; tier: Tier; label: string };
   applied:
-    | { kind: 'bits'; amount: number; consolationFor?: string } // consolationFor = duplicate cosmeticId
+    | { kind: 'bits'; amount: number; consolationFor?: 'species_token' }
     | { kind: 'xp'; amount: number; levelsGained: number }
-    | { kind: 'cosmetic'; cosmeticId: string };
+    | { kind: 'species'; species: Species };
   spinsRemaining: number;
 }
 
@@ -70,34 +71,45 @@ export function performSpin(rng?: () => number): SpinResult | SpinError {
       return;
     }
 
-    // Cosmetic. PRIMARY KEY conflict on duplicate roll → INSERT OR IGNORE returns
-    // changes=0, and we hand out consolation bits scaled by tier instead.
-    const ins = db
-      .prepare<[string, number]>(
-        `INSERT OR IGNORE INTO unlocks (item_id, category, acquired_via, acquired_at) VALUES (?, 'cosmetic', 'spin', ?)`,
+    // species_token — pick a random unowned species; if all owned, fall back
+    // to consolation bits scaled to the legendary tier.
+    const ownedRows = db
+      .prepare<[], { item_id: string }>(
+        `SELECT item_id FROM unlocks WHERE category = 'species'`,
       )
-      .run(reward.cosmeticId, Date.now());
-    if (ins.changes === 0) {
-      const amount = CONSOLATION_BITS[reward.tier];
-      db.prepare<[number]>(`UPDATE pet SET bits = bits + ? WHERE id = 1`).run(amount);
+      .all();
+    const ownedKeys = new Set(
+      ownedRows.map((r) => r.item_id.slice('species:'.length) as Species),
+    );
+    const unowned = (Object.keys(SPECIES_CATALOG) as Species[]).filter((s) => !ownedKeys.has(s));
+    if (unowned.length === 0) {
+      db.prepare<[number]>(`UPDATE pet SET bits = bits + ? WHERE id = 1`).run(SPECIES_TOKEN_CONSOLATION_BITS);
       outcome = {
         reward: rewardSummary,
-        applied: { kind: 'bits', amount, consolationFor: reward.cosmeticId },
+        applied: { kind: 'bits', amount: SPECIES_TOKEN_CONSOLATION_BITS, consolationFor: 'species_token' },
         spinsRemaining: remaining,
       };
       return;
     }
+    // rng()-deterministic random pick for the species. The reward's RNG is the
+    // same one passed into drawReward, so test seeds reach all the way through.
+    const picker = rng ?? Math.random;
+    const idx = Math.min(unowned.length - 1, Math.floor(picker() * unowned.length));
+    const picked = unowned[idx]!;
+    db.prepare<[string, number]>(
+      `INSERT OR IGNORE INTO unlocks (item_id, category, acquired_via, acquired_at) VALUES (?, 'species', 'spin', ?)`,
+    ).run(`species:${picked}`, Date.now());
     outcome = {
       reward: rewardSummary,
-      applied: { kind: 'cosmetic', cosmeticId: reward.cosmeticId },
+      applied: { kind: 'species', species: picked },
       spinsRemaining: remaining,
     };
   });
   tx();
 
-  // Cosmetic-from-wheel and (future) spin-count achievements may flip after a
-  // successful spin. Eval outside the txn — listener side-effects shouldn't run
-  // with the SQLite write-lock held.
+  // A species_token landing adds a species to the collection — may flip an
+  // unlock_species_* milestone. Player explicitly opts in to swap via the
+  // shop's Set Active button, so no tray refresh fires from here.
   if (!('error' in outcome)) evaluateAchievements();
 
   return outcome;
