@@ -72,6 +72,25 @@ function frameIndex(file: string): number {
   return m && m[1] ? parseInt(m[1], 10) : -1;
 }
 
+// Sum of frames across all directions for an animation entry. Used as the
+// tie-breaker when multiple folders alias to the same canonical key
+// ("fuller-anim-wins"): the entry with more total frames stays.
+export function totalFrameCount(directions: Partial<Record<Direction, string[]>>): number {
+  let n = 0;
+  for (const arr of Object.values(directions)) n += arr?.length ?? 0;
+  return n;
+}
+
+// True if the candidate should overwrite the existing entry at this alias.
+// "More frames" beats "fewer frames"; absent entry always loses.
+function shouldOverwrite(
+  existing: Partial<Record<Direction, string[]>> | undefined,
+  candidate: Partial<Record<Direction, string[]>>,
+): boolean {
+  if (!existing) return true;
+  return totalFrameCount(candidate) > totalFrameCount(existing);
+}
+
 function findBackground(species: Species): string | undefined {
   const file = path.join(spritesRoot(), species, 'background.png');
   try {
@@ -176,7 +195,9 @@ export function buildSpriteManifest(species: Species, unlocked?: ReadonlySet<str
 
     if (Object.keys(directions).length > 0) {
       for (const alias of animationAliases(animFolder)) {
-        manifest.animations[alias] = directions;
+        if (shouldOverwrite(manifest.animations[alias], directions)) {
+          manifest.animations[alias] = directions;
+        }
       }
     }
   }
@@ -200,7 +221,10 @@ export function buildSpriteManifest(species: Species, unlocked?: ReadonlySet<str
       directions[dir]!.sort((a, b) => frameIndex(a) - frameIndex(b));
     }
     if (Object.keys(directions).length > 0) {
-      manifest.animations[entry.toLowerCase()] = directions;
+      const key = entry.toLowerCase();
+      if (shouldOverwrite(manifest.animations[key], directions)) {
+        manifest.animations[key] = directions;
+      }
     }
   }
 
