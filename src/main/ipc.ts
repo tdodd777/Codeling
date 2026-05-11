@@ -36,6 +36,7 @@ import {
 } from './economy';
 import { events } from './events';
 import { notifyUpdate } from './notify';
+import { closePopout, isPopoutOpen, openPopout } from './popout';
 import { exportSaveDialog, importSaveDialog } from './save';
 import { getCurrentStreak } from './streaks';
 import { getAnimationsCatalog, getOwnedAnimationNames } from './shop/animations';
@@ -179,6 +180,12 @@ export function registerIpcHandlers(): void {
     app.setLoginItemSettings({ openAtLogin: !!enabled });
     return app.getLoginItemSettings().openAtLogin;
   });
+  ipcMain.handle('codeling:openPopout', () => openPopout());
+  ipcMain.handle('codeling:closePopout', () => {
+    closePopout();
+    return { ok: true } as const;
+  });
+  ipcMain.handle('codeling:isPopoutOpen', () => isPopoutOpen());
   ipcMain.handle('codeling:exportSave', () => exportSaveDialog());
   ipcMain.handle('codeling:importSave', async () => {
     const res = await importSaveDialog();

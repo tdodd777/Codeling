@@ -230,6 +230,9 @@ export interface CodelingApi {
   getStreak(): Promise<number>;
   getAutoLaunch(): Promise<boolean>;
   setAutoLaunch(enabled: boolean): Promise<boolean>;
+  openPopout(): Promise<{ ok: true } | { error: 'not-initialized' }>;
+  closePopout(): Promise<{ ok: true }>;
+  isPopoutOpen(): Promise<boolean>;
   exportSave(): Promise<{ ok: true; path: string } | { error: 'cancelled' | 'write-failed'; detail?: string }>;
   importSave(): Promise<
     | { ok: true; path: string }

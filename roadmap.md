@@ -44,20 +44,19 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## In progress
 
-*(nothing active — last commit was 33d47a0, Home animation picker)*
+*(nothing active — popout window just landed, awaiting UAT)*
 
 ---
 
 ## Next up (ordered — top is next)
 
-1. **Popout window.** `BrowserWindow` that loads the same renderer URL, resizable, in taskbar. Hides the tray panel when active (one surface at a time). Remember last size/position in `meta`. Compounds the value of the new animation picker by giving the panel real screen estate. *Deferred-backlog inherited from DIRECTION.md.*
-2. **Multi-fetch sprite manifest cleanup.** Home + PetSprite + StrictMode dev-double-mount fetch the same manifest 3× per panel open. Module-level promise dedupe in the renderer (or memoize-by-species in main). Pure perf cleanup, no UX change. *Open question in DIRECTION.md.*
-3. **Spin reveal animation.** Current toast pops the result instantly. Add wheel-spin / scroll / glow → reveal sequence. Pure-renderer; `performSpin` already returns the result up-front, the animation just delays the visual reveal.
-4. **Sprite scanner alias-collision fix.** When two folders alias to the same key (Mimic's three "Idle" folders), last-write-wins silently. Proper fix: prefer the entry with the most frames when aliases collide. Currently worked around in `scripts/luizmelo-slice.py` by renaming source folders. *Open question in DIRECTION.md.*
-5. **Silhouette previews for unowned species.** Shop currently shows full-color art with a price tag. Alpha-flatten to black would make the collection feel more like a wallchart. Needs a render utility or pre-baked silhouette PNGs.
-6. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
-7. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
-8. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
+1. **Multi-fetch sprite manifest cleanup.** Home + PetSprite + StrictMode dev-double-mount fetch the same manifest 3× per panel open. Module-level promise dedupe in the renderer (or memoize-by-species in main). Pure perf cleanup, no UX change. *Open question in DIRECTION.md.*
+2. **Spin reveal animation.** Current toast pops the result instantly. Add wheel-spin / scroll / glow → reveal sequence. Pure-renderer; `performSpin` already returns the result up-front, the animation just delays the visual reveal.
+3. **Sprite scanner alias-collision fix.** When two folders alias to the same key (Mimic's three "Idle" folders), last-write-wins silently. Proper fix: prefer the entry with the most frames when aliases collide. Currently worked around in `scripts/luizmelo-slice.py` by renaming source folders. *Open question in DIRECTION.md.*
+4. **Silhouette previews for unowned species.** Shop currently shows full-color art with a price tag. Alpha-flatten to black would make the collection feel more like a wallchart. Needs a render utility or pre-baked silhouette PNGs.
+5. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
+6. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
+7. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
 
 ---
 
@@ -78,6 +77,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- *(this commit)* — Popout window: standalone resizable BrowserWindow, hides tray panel while active, bounds persisted in `meta`
 - `33d47a0` — Home animation picker (per-species persisted choice)
 - `88d50c7` — Pivot to species collection + animation unlocks (delete evolution + cosmetics)
 - `713f3e6` — Docs refresh (README/PLAN/HUMAN, current roster)

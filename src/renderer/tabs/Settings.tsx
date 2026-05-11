@@ -23,6 +23,7 @@ export function Settings() {
   const [thresholdDraft, setThresholdDraft] = useState<string>('');
   const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [autoLaunch, setAutoLaunch] = useState<boolean | null>(null);
+  const [popoutOpen, setPopoutOpen] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -42,6 +43,7 @@ export function Settings() {
         setSpin(s);
         setThresholdDraft(String(s.spinThreshold));
       }).catch(console.error);
+      window.codeling.isPopoutOpen().then(setPopoutOpen).catch(console.error);
     };
     refetch();
     window.codeling.getReceiverInfo().then(setReceiver).catch(console.error);
@@ -81,6 +83,18 @@ export function Settings() {
       return;
     }
     setThresholdError(`Must be between ${res.min} and ${res.max}`);
+  }
+
+  async function togglePopout() {
+    if (popoutOpen) {
+      await window.codeling.closePopout();
+      setPopoutOpen(false);
+    } else {
+      const res = await window.codeling.openPopout();
+      if ('ok' in res) {
+        setPopoutOpen(true);
+      }
+    }
   }
 
   async function toggleAutoLaunch() {
@@ -253,6 +267,17 @@ export function Settings() {
               aria-checked={!!autoLaunch}
             >
               <span className="toggle__thumb" />
+            </button>
+          </div>
+        </div>
+        <div className="setting-row">
+          <div className="setting-row__main">
+            <div className="setting-row__label">Open in window</div>
+            <div className="setting-row__hint">Resizable standalone window; hides the tray panel while open</div>
+          </div>
+          <div className="setting-row__action">
+            <button className="ghost-btn" onClick={togglePopout}>
+              {popoutOpen ? 'Close window' : 'Open window'}
             </button>
           </div>
         </div>

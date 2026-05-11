@@ -11,6 +11,7 @@ import { events } from './events';
 import { registerIpcHandlers } from './ipc';
 import { startHttpReceiver } from './otel/http-receiver';
 import { startGrpcReceiver } from './otel/grpc-receiver';
+import { initPopout } from './popout';
 
 const TRAY_TARGET_PX = 40;
 const TRAY_FPS = 4;
@@ -221,6 +222,7 @@ async function bootstrap() {
       mb.window?.webContents.openDevTools({ mode: 'detach' });
     }
     startTrayAnimation();
+    initPopout({ mb, rendererUrl: rendererIndex(), preloadPath: preloadPath() });
   });
 
   mb.on('after-create-window', () => {
