@@ -38,7 +38,12 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 - Live updates: ingest broadcasts `codeling:update` → renderer refetches.
 - Per-species head-crop tuning for tray sprite rendering.
 
-**Distribution: not yet.** Dev-only `npm start` flow; no packaging / signing / auto-update.
+**Distribution**
+- Electron Forge makers: Squirrel.Windows (`.exe`), MakerDMG (`.dmg`), DEB, RPM.
+- `@electron-forge/publisher-github` configured against `tdodd777/Codeling`; `npm run publish` (with `GITHUB_TOKEN`) cuts a draft release with all maker artifacts attached.
+- `npx codeling install` downloads the matching OS artifact from the latest GitHub Release, runs the installer, then runs telemetry + Stop-hook installers. `--skip-app` / `--skip-otel` / `--skip-hook` for staged installs.
+- Auto-updater wired via `update.electronjs.org` (Squirrel feed). Skipped in dev mode; gated by `meta.auto_update_enabled` (default ON).
+- Not yet: paid code-signing certs (Apple Developer ID + Authenticode) — placeholders are commented in `forge.config.ts` with TODOs. First published release hasn't been cut; `npm publish` not yet run.
 
 ---
 
@@ -59,7 +64,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 - **Spin reveal animation — polish.** Current spinner is functional but uninspired. Options to explore: slot-machine-style cycle that decelerates into the result, wheel-of-fortune rotation, glow/burst burst with confetti for legendary tiers. Pick a treatment when next polishing visuals.
 
 
-- **Distribution.** Code signing (macOS notarization, Windows Authenticode — paid certs), auto-updates via Squirrel.Mac / Squirrel.Windows, DMG / MSI / Squirrel installer outputs, Homebrew tap, Scoop manifest, Winget submission.
+- **Distribution leftovers.** Paid certs (macOS notarization via Apple Developer ID, Windows Authenticode); first release cut + `npm publish` to wire the `npx codeling install` chain end-to-end; Homebrew tap, Scoop manifest, Winget submission. Squirrel feeds + auto-update + maker outputs already shipped — see *Recently shipped*.
 - **Robot species art.** David Harrington CC0 robot identified in `sprites.md`; drop-in candidate but not yet integrated.
 - **Four more LuizMelo creatures.** Goblin / skeleton / mushroom / rat already integrated; sources archive in `assets/sources/luizmelo/` has more — quick wins via `scripts/luizmelo-slice.py`.
 - **Starter selection animation.** Silhouette reveal on first launch. Was blocked on slime/robot art originally; post-pivot it's a polish layer over the existing random-starter flow.
@@ -74,6 +79,10 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `c6681ac` — README + package.json polish: lead with `npx codeling install`, Node 18+ requirement, `engines` + `files` whitelist, `npm run publish` script, `npm run setup` pinned to `--skip-app`
+- `d33d184` — CLI download step: `codeling install` fetches matching OS artifact from the latest GitHub Release, runs it, then runs telemetry + Stop-hook installers; `--skip-app/--skip-otel/--skip-hook` flags for staged installs; graceful skip when no release exists yet
+- `79e4360` — Auto-updater: `update-electron-app` against `update.electronjs.org`; skipped in dev mode; gated by `meta.auto_update_enabled` (default ON); failures silent so unsigned macOS builds don't break boot
+- `4165453` — Forge config: swap MakerZIP → MakerDMG for macOS; add `@electron-forge/publisher-github` (draft releases on `npm run publish`); commented-out osxSign / osxNotarize / Authenticode placeholders with TODOs
 - `14dbabe` — Tray drift-poll: 5s backstop catches direct-DB species writes that bypass `pet:species-changed`; production paths unaffected
 - `99a015b` — Telemetry on/off switch in Settings: start/stop OTLP receivers at runtime; persisted in `meta` (default ON); graceful close with 1s force-close backstop
 - `b441cd8` — CLI orchestrator (`scripts/codeling-cli.mjs`): one command runs telemetry + Stop hook installers across platforms; `bin` entry in package.json for future `npx codeling install`

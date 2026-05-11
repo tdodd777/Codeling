@@ -187,6 +187,18 @@ Rather than polling, ingest pushes a debounced `codeling:update` to all windows.
 - **Sprite per-stage layout: `assets/sprites/<species>/stage_<N>/`** mirrors the root layout (rotations/, animations/). Manifest scanner falls back to species root when the stage subdir is absent — so a freshly-evolved pet without dedicated art stays visible as the previous form rather than a broken image. Stage 0 always lives at species root by convention; renderers passing `stage=0` get the existing layout untouched.
 - **Cross-module tray refresh via a singleton EventEmitter (`src/main/events.ts`)** rather than direct coupling between economy → tray. `applyEconomy` emits `pet:evolved` *outside* its txn (no SQLite write-lock held during listener execution); `index.ts` subscribes and rebuilds the static + animated tray frames for the new stage. This keeps the renderer-broadcast `codeling:update` channel separate from in-process main signals.
 
+### 2026-05-11 — Distribution: makers, publisher, auto-update, CLI download (M4)
+- **GitHub Releases over self-hosted CDN.** Forge's `publisher-github` uploads maker artifacts to the repo's Releases as drafts on `npm run publish`. Zero infra to run (vs. S3 + CloudFront + signing pipeline), free for public repos, and `update.electronjs.org` consumes the same feed for auto-updates — one storage location, two delivery surfaces. Trade: download speeds are GitHub-hosted (fine globally, no edge cache). Revisit if Codeling ever has paid subscribers and download cost matters.
+- **`update.electronjs.org` over a self-hosted Squirrel feed.** It's Electron's official freebie service that wraps any public GitHub repo into Squirrel.Windows + Squirrel.Mac update feeds. We point at `tdodd777/Codeling` and that's it. Alternative would be running our own `nucleus` / `gh-releases-feed` instance; not worth the operational tax for a hobby app. Falls back to silent failure if the service is down (rather than blocking app boot).
+- **MakerDMG over MakerZIP for macOS.** A zip dropped a `Codeling.app` bundle into the user's Downloads folder; they had to know to drag it into Applications themselves and 80% wouldn't. A DMG with a window mockup teaches the gesture. Tradeoff: DMG branding (background image, drag arrow) is unstyled — defaults are fine for v0.1 but worth polishing once a brand exists. **Open decision flagged to user**.
+- **Auto-update gated by `meta.auto_update_enabled` (default ON), not always-on.** Mirrors the telemetry-toggle pattern so a future Settings checkbox needs zero refactor — just an IPC + a checkbox component. Default ON gets behavior shipped immediately while keeping a single SQL update away from off. **Open decision flagged to user**: whether default-on or opt-in via Settings is the desired posture.
+- **Auto-updater isolated in `src/main/auto-updater.ts`, called once from `bootstrap()`.** Single-line touch in `index.ts` so the user's parallel troubleshooting in main isn't perturbed. Skipped entirely in dev mode (the underlying Squirrel autoUpdater throws on non-Squirrel binaries — would spam the dev terminal otherwise).
+- **CLI download step uses GitHub API + native `fetch` (Node 18+).** Resume-skip by size match: if the temp-dir file matches the asset's reported size, reuse it (handy on retries / flaky networks). PAT optional via `GITHUB_TOKEN` env (avoids the anonymous 60/hr rate limit, otherwise public repos are fine unauthenticated). Asset picking is extension-based, not version-string-based, so future Forge releases that change the filename suffix scheme don't break the matcher.
+- **`runInstaller` is intentionally non-uniform across platforms.** Windows: spawn-detached the Squirrel `.exe` and unref so the CLI exits cleanly. macOS: `open` the DMG and let the user drag — auto-copying with `cp` would silently bypass Gatekeeper. Linux: print the `sudo dpkg -i` / `rpm -i` command rather than auto-elevating — users own privilege escalation, not us.
+- **`--skip-app/--skip-otel/--skip-hook` flags.** Lets contributors run `npm run setup` (now `--skip-app`) without downloading a redundant binary on top of their source tree, and lets users re-run just one piece if they need to. Flag-set parsing is intentionally trivial (substring `--` filter) — no need for a flags library.
+- **`files` whitelist in package.json.** When (if) we flip `private: false`, `npm publish` will ship only the CLI + helper scripts, not the renderer bundle or assets (those live in the GitHub Release artifacts, not the npm tarball). Keeps the published package small (~10KB) and prevents accidental art-asset leaks.
+- **Not done yet on purpose**: didn't flip `private: false`, didn't cut a release, didn't pursue paid certs. All flagged in the report for the user to pull.
+
 ### 2026-05-11 — Animation unlocks + species-token spin (M2)
 - **Depth layer landed.** Owned species expose their animations (run/walk/attack/death/hurt/etc.) as level-gated, bits-priced shop items. Idle is the always-free baseline; everything else is purchase-and-unlock. Two parallel progressions: bits → breadth (species), XP → depth (which animations are *reachable*), bits → realize that depth (final purchase).
 - **Animation catalog is dynamic, not static.** New `src/main/shop/animations.ts` consumes the sprite scanner's `listSpeciesAnimations(species)` and produces synthetic `AnimationShopItem` objects on demand. No edits to `SHOP_ITEMS` per new animation — the disk scan is the source of truth. Recipe: drop new art under `assets/sprites/<species>/animations/<name>/south/` and it appears in the shop on next refresh.
@@ -235,7 +247,8 @@ Rather than polling, ingest pushes a debounced `codeling:update` to all windows.
 Roughly ordered by impact for the next iteration.
 
 ### Onboarding
-- **Bundled `npx codeling install`** — the north-star install. The interim pieces are all shipped (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, Settings → Application auto-launch toggle); what's left is the assembly + `bin` setup that wraps them in one command and handles app download/launch + first-launch UX.
+- **Bundled `npx codeling install`** — shipped 2026-05-11. The CLI now downloads + runs the OS installer from the latest GitHub Release before invoking the telemetry + Stop-hook helpers. What's left: cut the first release (`npm run publish` with `GITHUB_TOKEN`), then flip `private: false` in package.json and run `npm publish` so the `npx` form resolves against npm rather than requiring a clone.
+- **First-launch UX** — starter-reveal animation when the panel opens for the first time after install. Currently blocked on robot species art (see Visuals); after that, pick a subset of species that rotate as starters and add the silhouette-cycle reveal.
 
 ### Visuals — `sprites.md` tracks per-species asset state
 - **Species 2 (slime)** — shipped (rvros, CC0, 4-frame idle + run).
@@ -247,10 +260,10 @@ Roughly ordered by impact for the next iteration.
 - **Starter selection animation** — silhouette reveal on first launch. Was blocked on slime/robot art; slime now exists. Still blocked on robot, then on selecting which subset of the now-9 species rotate as starters.
 
 ### Distribution (M4)
-- Code signing (macOS notarization, Windows Authenticode) — needs paid certs, HUMAN.md tracks
-- Auto-updates (Squirrel.Mac / Squirrel.Windows via Forge)
-- DMG / MSI / Squirrel installer outputs
-- Homebrew tap, scoop manifest, winget submission
+- ~~DMG / MSI / Squirrel installer outputs~~ — shipped 2026-05-11 (`4165453`). MakerSquirrel/MakerDMG/MakerDeb/MakerRpm configured in `forge.config.ts`; `npm run make` produces all four.
+- ~~Auto-updates (Squirrel.Mac / Squirrel.Windows via Forge)~~ — shipped 2026-05-11 (`79e4360`). `update-electron-app` against `update.electronjs.org`.
+- Code signing (macOS notarization, Windows Authenticode) — needs paid certs; placeholders are commented in `forge.config.ts` with TODOs. HUMAN.md tracks the cert acquisition.
+- Homebrew tap, scoop manifest, winget submission — not yet. Wait for the first npm-published release to establish a stable artifact-URL pattern, then submit.
 
 ### Settings leftovers
 - **XP / bit rate editing** — needs `RULES` → DB-backed refactor before exposing in the Settings panel.
