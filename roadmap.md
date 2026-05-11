@@ -74,6 +74,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `601907f` — Animation picker always visible (shows locked pills with price/level tooltip for unowned anims); spin reveal swapped to a clean circular spinner
 - `5175927` — Sprite scanner: fuller-anim-wins on alias collision; Mimic's idle frames no longer overwritten by single-frame static poses; 7 new tests
 - `95528e0` — Spin reveal animation: 900ms anticipation (tier cycle + pulsing label) before the result lands; skippable via click/Esc
 - `7b2e8f0` — PetSprite takes manifest as prop; eliminates duplicate getSprites fetches; Home resets manifest on species swap so stale frames don't render
