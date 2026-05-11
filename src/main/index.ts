@@ -235,6 +235,11 @@ async function bootstrap() {
   });
 
   let trayTimer: NodeJS.Timeout | null = null;
+  // Last species we rendered into the tray, so the drift poll below can
+  // detect a divergence between DB state and rendered state. Updated at the
+  // end of every successful startTrayAnimation call.
+  let lastTrayedSpecies: Species | null = null;
+
   function startTrayAnimation() {
     if (trayTimer) {
       clearInterval(trayTimer);
@@ -251,6 +256,7 @@ async function bootstrap() {
     if (mb.tray && !mb.tray.isDestroyed()) {
       mb.tray.setImage(trayIcon());
     }
+    lastTrayedSpecies = species;
     const frames = buildIdleTrayFrames(species);
     if (frames.length <= 1) return; // no animation available — keep static icon
     console.log(`[tray] animating ${frames.length} idle frames at ${TRAY_FPS} fps (${species})`);
@@ -267,6 +273,27 @@ async function bootstrap() {
       i++;
     }, Math.round(1000 / TRAY_FPS));
   }
+
+  // Drift backstop. The production paths emit pet:species-changed / pet:reset
+  // and the tray refreshes immediately. Direct DB writes (test paths,
+  // hypothetical future save-import code that doesn't emit) bypass that. A
+  // cheap 5s poll catches drift between the rendered species and current
+  // DB state and refreshes. Tiny single-row query; the interval is unref'd
+  // so it doesn't keep the process alive at quit.
+  const TRAY_DRIFT_POLL_MS = 5000;
+  const driftPoll = setInterval(() => {
+    let current: Species;
+    try {
+      current = getPet().species;
+    } catch {
+      return;
+    }
+    if (lastTrayedSpecies !== null && current !== lastTrayedSpecies) {
+      console.log(`[tray] species drifted ${lastTrayedSpecies} → ${current}; refreshing`);
+      startTrayAnimation();
+    }
+  }, TRAY_DRIFT_POLL_MS);
+  if (typeof driftPoll.unref === 'function') driftPoll.unref();
 
   events.on('pet:species-changed', (e) => {
     console.log(`[tray] active species changed → ${e.species}; refreshing`);
@@ -297,6 +324,7 @@ async function bootstrap() {
 
   app.on('before-quit', () => {
     if (trayTimer) clearInterval(trayTimer);
+    clearInterval(driftPoll);
   });
 }
 
