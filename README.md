@@ -1,20 +1,57 @@
+<div align="center">
+
 # Codeling
 
-A gamified pet companion for Claude Code. Lives in your menu bar (macOS) or system tray (Windows). The more you use Claude Code, the more your pet grows.
+**A gamified pet companion for [Claude Code](https://claude.com/claude-code).**
+The more you code, the more your pet grows.
 
-> **Status**: M0 → M1 → M5 (mostly) shipped. The game loop is live end-to-end: OTLP receivers ingest Claude Code telemetry, the economy awards XP/bits, the spin wheel + shop + species/animation unlocks work, achievements + daily streaks + daily summary fire, settings panel + save export/import + auto-launch toggle all land. Sprite roster is 14 species with art (PixelLab wizard + rvros slime + 12 LuizMelo CC0 creatures). Distribution is wired: `npx codeling install` downloads + runs the OS installer from GitHub Releases, then sets up telemetry + the Stop hook; auto-updater feeds from `update.electronjs.org`. What's still open: paid code-signing certs (unsigned builds work but trigger publisher-unknown warnings), the first published release, robot species art, and UX polish. See `DIRECTION.md` for the full roadmap and dated decision log; `sprites.md` for the asset catalog.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/tdodd777/Codeling/releases)
+[![Built with Electron](https://img.shields.io/badge/built%20with-Electron-9feaf9.svg)](https://www.electronjs.org/)
+[![Telemetry: OpenTelemetry](https://img.shields.io/badge/telemetry-OpenTelemetry-425CC7.svg)](https://opentelemetry.io/)
 
-## Stack
+<br />
 
-- Electron Forge + Vite + React 18 + TypeScript
-- `menubar` for cross-platform tray
-- `better-sqlite3` for local pet/session state
-- OpenTelemetry receivers — both OTLP/HTTP (`:4318`) and OTLP/gRPC (`:4317`)
-- Sprite assets: original wizard from [PixelLab](https://pixellab.ai/) (paid); rest of the roster (slime + 12 monsters/creatures) from CC0 itch.io packs — see `sprites.md`
+<img src="assets/sprites/wizard/rotations/south.png" width="80" alt="wizard" />
+<img src="assets/sprites/slime/rotations/south.png" width="80" alt="slime" />
+<img src="assets/sprites/flying_eye/rotations/south.png" width="80" alt="flying eye" />
+<img src="assets/sprites/mimic/rotations/south.png" width="80" alt="mimic" />
+<img src="assets/sprites/bat/rotations/south.png" width="80" alt="bat" />
+<img src="assets/sprites/fire_worm/rotations/south.png" width="80" alt="fire worm" />
+<img src="assets/sprites/mushroom/rotations/south.png" width="80" alt="mushroom" />
 
-## Install
+</div>
 
-**Requirements:** Node 18+ (`node --version`). Claude Code installed and working.
+<br />
+
+<!-- TODO: replace with a real hero screenshot of the tray panel -->
+<p align="center">
+  <img src="docs/screenshots/hero.png" alt="Codeling tray panel" width="640" />
+  <br />
+  <sub><i>Add hero screenshot at <code>docs/screenshots/hero.png</code></i></sub>
+</p>
+
+---
+
+## Overview
+
+Codeling lives in your **menu bar** (macOS) or **system tray** (Windows / Linux) and turns your Claude Code sessions into XP. Every prompt you send feeds your pet. Level up, spin the wheel, unlock new species, decorate your shelf.
+
+Under the hood it's a love letter to indie pixel-pet games (Tamagotchi, Neopets, the desktop companions of the late 90s), wired up to an OpenTelemetry pipeline that consumes Claude Code's emitted metrics in real time. No accounts, no cloud, everything lives on-device.
+
+## Features
+
+- **14 species to collect**: hand-picked pixel art with full idle / run / attack / hurt / death animations
+- **OTLP telemetry**: local OpenTelemetry receivers (HTTP + gRPC) parse Claude Code's metric stream and convert it into XP and bits
+- **Spin wheel + shop**: every 50 messages earns a spin; spend bits on new species and animation unlocks
+- **Achievements + daily streaks**: milestone notifications and a daily-summary popup
+- **Live-tunable economy**: XP / bit / spin rules editable from the Settings panel without a restart
+- **Save export/import**: full snapshot in/out as a single JSON file
+- **100% local**: no analytics, no account, no cloud sync. SQLite on your disk.
+
+## Quickstart
+
+Requires **Node 18+** and a working [Claude Code](https://claude.com/claude-code) install.
 
 ```bash
 npx codeling install
@@ -22,46 +59,93 @@ npx codeling install
 
 That one command:
 
-1. Downloads the installer for your OS from the latest [GitHub Release](https://github.com/tdodd777/Codeling/releases) (`.exe` on Windows, `.dmg` on macOS, `.deb` / `.rpm` on Linux) and runs it.
-2. Sets the User-scope OTEL env vars so every Claude Code session feeds Codeling's receiver.
-3. Installs the Stop hook in `~/.claude/settings.json` for a backup per-turn message tally.
+1. Downloads the right installer for your OS from the latest [GitHub Release](https://github.com/tdodd777/Codeling/releases) and runs it (`.exe` on Windows, `.dmg` on macOS, `.deb` / `.rpm` on Linux)
+2. Sets the user-scope OTEL env vars so every Claude Code session feeds Codeling's receiver
+3. Installs a `Stop` hook in `~/.claude/settings.json` as a per-turn message-count backup
 
-Flags: `--skip-app`, `--skip-otel`, `--skip-hook` for staged installs.
+Restart your shell (IDEs too) so the env vars propagate, then send a message in Claude Code and watch your pet level up.
 
-> **Unsigned builds**: until code signing certs are wired (paid Apple Developer ID + Authenticode), the first launch shows a "publisher unknown" / "unidentified developer" warning. Dismiss it once; subsequent launches are silent.
+> **First-launch warning**: until paid signing certs are wired, an "unidentified developer" / "publisher unknown" prompt appears on first launch. Dismiss it once and subsequent launches are silent.
 
-After install, restart your shell so the new env vars propagate (IDEs / VS Code need a relaunch too). Send a message through Claude Code and watch the tray pet level up.
-
-### Uninstall
+Need staged installs? Use `--skip-app`, `--skip-otel`, or `--skip-hook`.
 
 ```bash
-npx codeling uninstall          # removes telemetry + Stop hook
+npx codeling status      # show env vars + Stop hook + platform
+npx codeling uninstall   # remove telemetry + Stop hook
 ```
 
-The app itself is removed via the OS — *Add or Remove Programs* on Windows, drag-to-Trash on macOS, `apt remove codeling` / `rpm -e codeling` on Linux.
+## Screenshots
 
-### Status
+<!-- TODO: drop UI screenshots into docs/screenshots/ as you capture them -->
 
-```bash
-npx codeling status             # shows env vars + Stop hook + platform
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/home.png" alt="Home tab" width="280" /><br /><sub><b>Home</b>: pet, level, XP, bits, spin progress</sub></td>
+    <td align="center"><img src="docs/screenshots/shop.png" alt="Shop tab" width="280" /><br /><sub><b>Shop</b>: spend bits on species & animations</sub></td>
+    <td align="center"><img src="docs/screenshots/stats.png" alt="Stats tab" width="280" /><br /><sub><b>Stats</b>: tokens, streaks, achievements</sub></td>
+  </tr>
+</table>
+
+## The roster
+
+All 14 species ship bundled with the installer. No downloads, no extra setup. Pick yours from the Shop once you've unlocked it.
+
+<table>
+  <tr>
+    <td align="center"><img src="assets/sprites/wizard/rotations/south.png" width="64" /><br /><sub><b>Wizard</b></sub></td>
+    <td align="center"><img src="assets/sprites/slime/rotations/south.png" width="64" /><br /><sub><b>Slime</b></sub></td>
+    <td align="center"><img src="assets/sprites/flying_eye/rotations/south.png" width="64" /><br /><sub><b>Flying Eye</b></sub></td>
+    <td align="center"><img src="assets/sprites/bat/rotations/south.png" width="64" /><br /><sub><b>Bat</b></sub></td>
+    <td align="center"><img src="assets/sprites/mimic/rotations/south.png" width="64" /><br /><sub><b>Mimic</b></sub></td>
+    <td align="center"><img src="assets/sprites/evil_wizard/rotations/south.png" width="64" /><br /><sub><b>Evil Wizard</b></sub></td>
+    <td align="center"><img src="assets/sprites/fire_worm/rotations/south.png" width="64" /><br /><sub><b>Fire Worm</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/sprites/martial_hero/rotations/south.png" width="64" /><br /><sub><b>Martial Hero</b></sub></td>
+    <td align="center"><img src="assets/sprites/martial_hero_2/rotations/south.png" width="64" /><br /><sub><b>Martial Hero 2</b></sub></td>
+    <td align="center"><img src="assets/sprites/apprentice_wizard/rotations/south.png" width="64" /><br /><sub><b>Apprentice Wizard</b></sub></td>
+    <td align="center"><img src="assets/sprites/goblin/rotations/south.png" width="64" /><br /><sub><b>Goblin</b></sub></td>
+    <td align="center"><img src="assets/sprites/skeleton/rotations/south.png" width="64" /><br /><sub><b>Skeleton</b></sub></td>
+    <td align="center"><img src="assets/sprites/mushroom/rotations/south.png" width="64" /><br /><sub><b>Mushroom</b></sub></td>
+    <td align="center"><img src="assets/sprites/rat/rotations/south.png" width="64" /><br /><sub><b>Rat</b></sub></td>
+  </tr>
+</table>
+
+For sourcing, license vetting, and slicing details, see [`sprites.md`](sprites.md).
+
+## How it works
+
+```
+   Claude Code
+        │
+        │  OTLP (HTTP :4318 or gRPC :4317)
+        ▼
+┌──────────────────────────────────────┐
+│  Codeling receivers                  │
+│    ↓                                 │
+│  Aggregator                          │
+│    • claude_code.token.usage  → tokens
+│    • event.name=user_prompt   → messages
+│    ↓                                 │
+│  Economy → XP / bits / spins         │
+│    ↓                                 │
+│  SQLite (better-sqlite3)             │
+│    ↓                                 │
+│  React panel (menubar tray)          │
+└──────────────────────────────────────┘
 ```
 
-## Manual install (from source)
+- **Telemetry**: Codeling runs OTLP receivers on `127.0.0.1:4318` (HTTP) and `127.0.0.1:4317` (gRPC). Claude Code emits to either when the OTEL env vars are set; HTTP is the default.
+- **Economy**: `src/main/economy.ts` converts ingested events into XP and bits. Defaults live in `ECONOMY_RULE_DEFAULTS`; overrides go in the `meta` table and are editable live from the Settings tab.
+- **State**: all on-device in SQLite:
+  - Windows: `%APPDATA%\Codeling\codeling.db`
+  - macOS: `~/Library/Application Support/Codeling/codeling.db`
+  - Linux: `~/.config/Codeling/codeling.db`
 
-For development or if you'd rather run from a clone:
-
-```bash
-git clone https://github.com/tdodd777/Codeling.git
-cd Codeling
-npm install
-npm run setup          # same as `npx codeling install --skip-app`
-npm start              # launches the app from source
-```
-
-`npm start` is the Forge dev loop — Vite HMR for the renderer, hot main-process reload on save (type `rs` in the terminal to manually restart).
+The Stop hook in `~/.claude/settings.json` is a backup per-turn tally. If an OTLP event drops, the message count stays correct.
 
 <details>
-<summary>Manual env vars (if you'd rather set them yourself)</summary>
+<summary><b>Manual env vars</b> (if you'd rather configure telemetry yourself)</summary>
 
 ```
 CLAUDE_CODE_ENABLE_TELEMETRY=1
@@ -74,66 +158,78 @@ OTEL_METRIC_EXPORT_INTERVAL=10000
 
 </details>
 
-## Project layout
+## Uninstall
 
-```
-src/
-├── main/            # Electron main process
-│   ├── db/          # SQLite client + schema + repos
-│   ├── otel/        # OTLP receivers, decoders, aggregator
-│   ├── economy.ts   # XP / Bits / level / spin rules
-│   ├── notify.ts    # Coalesced renderer broadcast
-│   ├── sprites.ts   # PixelLab-format sprite manifest builder
-│   ├── ipc.ts       # ipcMain handlers
-│   └── index.ts     # Entry — menubar setup, lifecycle, tray animation
-├── preload/         # contextBridge surface (`window.codeling.*`)
-├── renderer/        # React panel (Home / Shop / Stats)
-└── shared/          # IPC contract types
-
-assets/
-├── sprites/<species>/    # Sliced sprite frames — one folder per species
-│   ├── rotations/        # 8-direction (PixelLab) or south-only (sliced LuizMelo) static frames
-│   └── animations/       # <name>/<direction>/frame_NNN.png — scanner aliases `idle`/`run`/etc.
-├── sources/              # Raw unmodified source ZIPs preserved for re-extraction
-│   ├── slime/            # rvros source + NOTICE.md
-│   └── luizmelo/         # LuizMelo packs + NOTICE.md
-└── tray-icon*.png        # Brand fallback when species sprite is missing
-
-scripts/
-├── install-telemetry.{ps1,sh}    # Per-platform env-var installers
-├── install-stop-hook.mjs         # Claude Code Stop hook installer
-└── luizmelo-slice.py             # LuizMelo spritesheet -> per-frame slicer
-
-proto/                            # Vendored OTLP collector .proto files
+```bash
+npx codeling uninstall   # removes telemetry env vars + Stop hook
 ```
 
-## Adding a sprite
+The app itself uninstalls through the OS:
 
-Two supported source flavors:
+- **Windows**: *Add or Remove Programs*
+- **macOS**: drag to Trash
+- **Linux**: `apt remove codeling` or `rpm -e codeling`
 
-**PixelLab Character Creator exports.** Drop the unmodified export folder into `assets/sprites/<species>/`. The scanner reads PixelLab's native layout (rotations/ + animations/) — no renaming needed.
+## Development
 
-**LuizMelo itch.io packs.** Drop the unzipped pack into `assets/sprites/`, extend the `SPECIES` dict in `scripts/luizmelo-slice.py`, then run `python scripts/luizmelo-slice.py`. The slicer converts horizontal sprite strips into the PixelLab-compatible layout and archives the raw source under `assets/sources/luizmelo/`.
+```bash
+git clone https://github.com/tdodd777/Codeling.git
+cd Codeling
+npm install
+npm run setup    # telemetry + Stop hook only (same as install --skip-app)
+npm start        # Forge dev: Vite HMR + hot main-process reload
+```
 
-See [`sprites.md`](sprites.md) for the curated catalog of vetted open-source sprite candidates, license rules, and per-species frame inventory. See the *Sprite asset convention* and *Art pipeline* entries in `DIRECTION.md` for the canonical scanner behavior and pipeline decisions.
-
-## Where things live
-
-- **Vision, dated decisions, deferred backlog, open questions**: `DIRECTION.md`
-- **Execution plan + per-milestone done/in-progress checklist**: `PLAN.md`
-- **Human-only tasks** (asset generation, distribution, real-machine validation, playtesting): `HUMAN.md`
-- **Sprite roster** (integrated species, license compatibility rules, scouting catalog, integration recipe): `sprites.md`
-- **SQLite database** (runtime): `%APPDATA%\Codeling\codeling.db` on Windows, `~/Library/Application Support/Codeling/codeling.db` on macOS
-- **Tunable game rules** (defaults): `src/main/economy.ts` (`ECONOMY_RULE_DEFAULTS`); live overrides live in the `meta` table and are editable via the Settings tab → Economy section
-
-## Scripts
+`npm start` is the full dev loop: Vite HMR for the renderer, hot main-process reload on save. Type `rs` in the terminal to force a restart.
 
 | Script | What |
 |---|---|
-| `npm start` | Forge dev — Vite HMR + Electron, hot-reloads main process on save (type `rs` to manually restart) |
+| `npm start` | Forge dev: Vite HMR for renderer + hot main reload |
 | `npm run lint` | TypeScript type check (`tsc --noEmit`) |
 | `npm test` | Run vitest (pure-logic suites); `npm run test:watch` for watch mode |
-| `npm run package` | Forge package — produces an unpacked binary |
-| `npm run make` | Forge make — produces installers (Squirrel/DMG/DEB/RPM) in `out/make/` |
-| `GITHUB_TOKEN=… npm run publish` | Forge publish — uploads installers to GitHub Releases as a draft (do not run lightly; cuts a release) |
-| `npm run setup` | Same as `npx codeling install --skip-app` — telemetry + Stop hook only |
+| `npm run package` | Forge package: unpacked binary |
+| `npm run make` | Forge make: full installers (Squirrel / DMG / DEB / RPM) in `out/make/` |
+| `GITHUB_TOKEN=… npm run publish` | Forge publish: uploads installers to GitHub Releases as a draft |
+
+### Project layout
+
+```
+src/
+├── main/            Electron main process
+│   ├── db/          SQLite client + schema + repos
+│   ├── otel/        OTLP receivers, decoders, aggregator
+│   ├── economy.ts   XP / Bits / level / spin rules
+│   ├── sprites.ts   PixelLab-format sprite manifest builder
+│   └── index.ts     Entry: menubar setup, lifecycle, tray animation
+├── preload/         contextBridge surface (window.codeling.*)
+├── renderer/        React panel (Home / Shop / Stats / Settings)
+└── shared/          IPC contract types
+
+assets/sprites/<species>/    Per-species sprite folders (bundled)
+scripts/                     Install/uninstall CLI + sprite slicer
+proto/                       Vendored OTLP collector .proto files
+```
+
+## Contributing
+
+Contributions welcome. A few common paths in:
+
+- **Add a sprite species**: the full recipe (asset layout, slicer, license vetting bar) is in [`sprites.md`](sprites.md). The bar for inclusion is rich animation: ≥6 frames per anim, ≥3 distinct animations.
+- **Tune the economy**: defaults in `src/main/economy.ts`. Open an issue or PR with the proposed delta and the reasoning.
+- **Distribution polish**: code signing, auto-update channels, and Linux packaging smoke tests are all in the open backlog.
+
+For larger changes, open an issue first to talk through direction. The dated decision log in [`DIRECTION.md`](DIRECTION.md) captures the *why* behind current choices; [`roadmap.md`](roadmap.md) tracks what's next.
+
+## Acknowledgments
+
+Codeling builds on the work of pixel artists who release under permissive licenses. Every sprite in the roster is either CC0 or commissioned:
+
+- **[LuizMelo](https://luizmelo.itch.io/)**: 12 of 14 species (Flying Eye, Bat, Mimic, Evil Wizard, Fire Worm, Martial Hero, Martial Hero 2, Apprentice Wizard, Goblin, Skeleton, Mushroom, Rat). Carries the CC0-with-rich-animation niche on itch.io.
+- **[rvros](https://rvros.itch.io/pixel-art-animated-slime)**: the slime.
+- **[PixelLab](https://pixellab.ai/)**: the original wizard.
+
+Per-source license details and frame inventories live in [`sprites.md`](sprites.md) and per-source `NOTICE.md` files under `assets/sources/`.
+
+## License
+
+[MIT](LICENSE) © Tyler Dodd
