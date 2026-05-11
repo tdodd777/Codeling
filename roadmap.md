@@ -77,6 +77,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `e297819` — Popout polish: tray click intercepted at source (no flicker); PetSprite renders only once manifest loaded (fix initial-blank bug)
 - `02f2d43` — Popout window: standalone resizable BrowserWindow, hides tray panel while active, bounds persisted in `meta`
 - `33d47a0` — Home animation picker (per-species persisted choice)
 - `88d50c7` — Pivot to species collection + animation unlocks (delete evolution + cosmetics)
