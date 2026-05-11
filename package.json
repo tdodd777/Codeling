@@ -5,6 +5,9 @@
   "description": "Gamified Claude Code companion that lives in your menu bar.",
   "main": ".vite/build/main.js",
   "private": true,
+  "bin": {
+    "codeling": "./scripts/codeling-cli.mjs"
+  },
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -12,6 +15,9 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "setup": "node ./scripts/codeling-cli.mjs install",
+    "setup:uninstall": "node ./scripts/codeling-cli.mjs uninstall",
+    "setup:status": "node ./scripts/codeling-cli.mjs status",
     "stop-hook:install": "node ./scripts/install-stop-hook.mjs install",
     "stop-hook:uninstall": "node ./scripts/install-stop-hook.mjs uninstall",
     "stop-hook:status": "node ./scripts/install-stop-hook.mjs status"
