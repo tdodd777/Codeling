@@ -50,10 +50,9 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Next up (ordered — top is next)
 
-1. **Silhouette previews for unowned species.** Shop currently shows full-color art with a price tag. Alpha-flatten to black would make the collection feel more like a wallchart. Needs a render utility or pre-baked silhouette PNGs.
-2. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
-3. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
-4. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
+1. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
+2. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
+3. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
 
 ---
 
@@ -77,6 +76,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `7449edc` — Shop silhouette previews: 48px south-rotation thumbnails next to species rows; unowned render as alpha-flat silhouettes via CSS filter
 - `601907f` — Animation picker always visible (shows locked pills with price/level tooltip for unowned anims); spin reveal swapped to a clean circular spinner
 - `5175927` — Sprite scanner: fuller-anim-wins on alias collision; Mimic's idle frames no longer overwritten by single-frame static poses; 7 new tests
 - `95528e0` — Spin reveal animation: 900ms anticipation (tier cycle + pulsing label) before the result lands; skippable via click/Esc
