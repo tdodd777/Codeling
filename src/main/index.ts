@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import type { Species } from '@shared/types';
 import { evaluateAchievements } from './achievements';
+import { initAutoUpdater } from './auto-updater';
 import { maybeShowDailySummary } from './daily-summary';
 import { getDb, closeDb } from './db/client';
 import { getPet } from './db/repos';
@@ -188,6 +189,8 @@ async function bootstrap() {
   } else {
     console.log('[otel] receivers not started — telemetry disabled in Settings');
   }
+
+  initAutoUpdater();
 
   // Tooltip shows the pet's name so the user can identify which pet is theirs
   // when multiple Codeling-style apps live in the tray. Falls back to brand if
