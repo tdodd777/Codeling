@@ -24,12 +24,6 @@ The more you code, the more your pet grows.
 
 <br />
 
-<!-- TODO: replace with a real hero screenshot of the tray panel -->
-<p align="center">
-  <img src="docs/screenshots/hero.png" alt="Codeling tray panel" width="640" />
-  <br />
-  <sub><i>Add hero screenshot at <code>docs/screenshots/hero.png</code></i></sub>
-</p>
 
 ---
 
@@ -170,19 +164,13 @@ The app itself uninstalls through the OS:
 
 ## Roadmap
 
-### Known limitations
+The honest list — stuff that's scrappy today and stuff worth adding next:
 
-- **Unsigned builds.** First-launch "publisher unknown" (Windows) / "unidentified developer" (macOS) prompt until paid code-signing certs land. Dismiss once and subsequent launches are silent.
-- **Stop-hook vs OTLP race.** With the Stop hook installed, OTLP `user_prompt` and the hook can race; very occasionally a turn gets counted twice. Fix shapes tracked in `DIRECTION.md` → Open questions.
-- **DELTA-temporality OTLP only.** Codeling expects DELTA temporality (which is what Claude Code emits today). If the source ever switches to CUMULATIVE, the aggregator warns and drops the data point.
-
-### Coming up
-
-- **First published release.** Cut a release via `npm run publish` (uploads to GitHub Releases) and flip `private: false` in `package.json` so `npx codeling install` resolves end-to-end. Currently the CLI downloads from a release that doesn't exist yet.
-- **Code signing.** Apple Developer ID + notarization for macOS; Authenticode for Windows. Placeholders are commented in `forge.config.ts`.
-- **Additional package channels.** Homebrew cask, Scoop manifest, Winget submission.
-- **More species.** Additional CC0 candidates archived under `assets/sources/luizmelo/` — drop them through `scripts/luizmelo-slice.py`.
-- **Polish.** Spin-reveal animation pass; 8-directional rendering on the panel; starter-selection silhouette reveal on first launch; animation-pricing tuning post-playtest.
+- **Better spin reveal animation.** Current spin is a 900ms tier-cycle into a static toast. A real slot-machine / wheel-of-fortune treatment with deceleration and tier-aware payoff would land harder.
+- **More consistent sprite art.** The 14 species ship from three different artists in different aesthetic registers — pixel size, palette, line weight all vary. A unified-style pass (or a single-artist v2 roster) would tighten the visual identity.
+- **Nicer tray animation.** 4 FPS idle frames at small sizes read as static-with-a-hiccup. Higher frame rate, motion smoothing, or activity-triggered reactions (a wiggle when XP comes in) would make the tray feel more alive.
+- **More achievements.** 16 today across engagement / progression / collection / cost / streak. More categories (long-session bonuses, late-night coders, multi-day-burst sprints) would deepen the loop.
+- **Other coding tools.** Today the pipeline is wired for Claude Code's OTLP signal. Codex and other agentic coding tools that emit OTLP could feed the same XP/bits economy with adapter work in the aggregator.
 
 ## Development
 
@@ -230,7 +218,7 @@ Contributions welcome. Common paths:
 
 - **Add a species.** Drop a sprite folder under `assets/sprites/<species>/` matching the existing layout (`rotations/south.png` as the static fallback, `animations/<Name>/south/frame_NNN.png` for each animation — the folder name is matched against keywords: `idle`/`breath`, `run`, `walk`, `attack`). Add the key to the `Species` union and `SPECIES_CATALOG` in `src/shared/types.ts`; optionally tune the head-crop fraction in `TRAY_HEAD_FRACTION` (`src/main/index.ts`). Bar for inclusion: rich animation (≥6 frames per anim, ≥3 distinct animations). Acceptable licenses: **CC0**, **CC-BY** (with attribution in `assets/sources/<creator>/NOTICE.md`), **MIT**. Reject anything with **SA / NC / ND / GPL** clauses — copyleft / non-commercial restrictions are incompatible with this repo's MIT license. LuizMelo packs ship one PNG per animation as a horizontal strip; slice via `scripts/luizmelo-slice.py` (extend the `SPECIES` dict and re-run).
 - **Tune the economy.** Defaults in `src/main/economy.ts`. Open an issue or PR with the proposed delta and the reasoning.
-- **Distribution polish.** Code signing, packaging smoke tests, additional channels — see *Roadmap* above.
+- **Polish targets.** Spin animation, tray animation, more achievements, support for additional coding tools — see *Roadmap* above.
 
 For larger changes, open an issue first. The dated decision log in [`DIRECTION.md`](DIRECTION.md) captures the *why* behind current choices.
 
