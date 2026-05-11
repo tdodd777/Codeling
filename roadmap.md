@@ -65,9 +65,8 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 
 - **Distribution leftovers.** Paid certs (macOS notarization via Apple Developer ID, Windows Authenticode); first release cut + `npm publish` to wire the `npx codeling install` chain end-to-end; Homebrew tap, Scoop manifest, Winget submission. Squirrel feeds + auto-update + maker outputs already shipped — see *Recently shipped*.
-- **Robot species art.** David Harrington CC0 robot identified in `sprites.md`; drop-in candidate but not yet integrated.
-- **Four more LuizMelo creatures.** Goblin / skeleton / mushroom / rat already integrated; sources archive in `assets/sources/luizmelo/` has more — quick wins via `scripts/luizmelo-slice.py`.
-- **Starter selection animation.** Silhouette reveal on first launch. Was blocked on slime/robot art originally; post-pivot it's a polish layer over the existing random-starter flow.
+- **Additional species.** Sources archive in `assets/sources/luizmelo/` has more candidates beyond the integrated roster — quick wins via `scripts/luizmelo-slice.py`. The broader CC0 catalog (per `sprites.md`) has a handful of drop-in candidates too.
+- **Starter selection animation.** Silhouette reveal on first launch — a polish layer over the existing random-starter flow.
 - **Animation pricing tuning.** Numbers in `shop/animations.ts` are placeholders. Instrument `bits / cheapest-locked-animation` ratio post-playtest, then tune.
 - **8-directional rendering.** Scanner already finds 8-direction frames; renderer + tray use south-only. Pick a behavior (face direction of last XP source? camera follow?) once the rest stabilizes.
 - **Multi-machine sync.** Implies cloud + account. Default answer: no, local-only. Save export/import covers manual migration in the meantime. *Open question.*

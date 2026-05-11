@@ -17,16 +17,13 @@ const TRAY_TARGET_PX = 40;
 const TRAY_FPS = 4;
 
 // Per-species head-crop fraction. Humanoid silhouettes (wizard) read well as
-// just hat + face; rounder pets (slime) need more body in frame; mechanical
-// pets (robot) tend to have the most distinctive feature lower down so we
-// take the whole sprite.
+// just hat + face; rounder pets (slime) need more body in frame.
 //
-// Tune once each species' real art lands — the slime/robot values are
-// placeholders, picked so the tray scan won't break before you can iterate.
+// Tune once each species' real art lands — the slime value is a placeholder,
+// picked so the tray scan won't break before you can iterate.
 const TRAY_HEAD_FRACTION: Record<Species, number> = {
   wizard: 0.55,
   slime: 0.85,
-  robot: 1.0,
   // LuizMelo creatures — all single-direction, soft pixel art, placeholders to tune
   // once each species is seen on a real tray icon at native size.
   flying_eye: 0.9,         // mostly head (eye monster), head crop is the whole sprite

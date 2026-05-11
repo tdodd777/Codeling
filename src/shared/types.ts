@@ -1,7 +1,6 @@
 export type Species =
   | 'wizard'
   | 'slime'
-  | 'robot'
   | 'flying_eye'
   | 'bat'
   | 'mimic'
@@ -200,7 +199,6 @@ export const SPECIES_CATALOG: Record<Species, SpeciesInfo> = {
   fire_worm:         { label: 'Fire Worm',         tier: 'uncommon',  priceBits: 400 },
   mimic:             { label: 'Mimic',             tier: 'rare',      priceBits: 800 },
   evil_wizard:       { label: 'Evil Wizard',       tier: 'rare',      priceBits: 800 },
-  robot:             { label: 'Robot',             tier: 'rare',      priceBits: 800 },
   apprentice_wizard: { label: 'Apprentice Wizard', tier: 'rare',      priceBits: 800 },
   martial_hero:      { label: 'Martial Hero',      tier: 'legendary', priceBits: 1500 },
   martial_hero_2:    { label: 'Martial Hero II',   tier: 'legendary', priceBits: 1500 },

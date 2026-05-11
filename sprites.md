@@ -39,7 +39,6 @@ When in doubt, **don't ship raw source PNGs**. Compositing assets into derived s
 | `skeleton` | [LuizMelo MCF1 — Skeleton](https://luizmelo.itch.io/monsters-creatures-fantasy) | CC0 | Idle 4f + Walking 4f + Attack ×3 (8/8/6) + Shield 4f + Hurt 4f + Death 4f — 42 total |
 | `mushroom` | [LuizMelo MCF1 — Mushroom](https://luizmelo.itch.io/monsters-creatures-fantasy) | CC0 | Idle 4f + Running 8f + Attack ×3 (8/8/11) + Hurt 4f + Death 4f — 47 total |
 | `rat` | [LuizMelo MCF2 — Rat](https://luizmelo.itch.io/monsters-creatures-fantasy-2) | CC0 | Idle 10f + Running 8f + Attack 12f + Hurt 3f + Death 6f — 39 total |
-| `robot` | _none yet_ | — | Listed in `Species` type, no art |
 
 ---
 
@@ -147,7 +146,7 @@ The slime is the reference implementation. For each new LuizMelo (or other) crea
 
 1. **Add the species code** in `src/shared/types.ts`:
    ```typescript
-   export type Species = 'wizard' | 'slime' | 'robot' | 'mimic' | 'bat' | ...;
+   export type Species = 'wizard' | 'slime' | 'mimic' | 'bat' | ...;
    ```
 2. **Per-species tray crop fraction** in `src/main/index.ts` → `TRAY_HEAD_FRACTION`. Pick a placeholder (e.g., `0.7` for flying creatures, `0.9` for radially-symmetric blobs, `0.5` for humanoid silhouettes). Tune once you see it on a real tray.
 3. **Drop the assets** into `assets/sprites/<species>/`:

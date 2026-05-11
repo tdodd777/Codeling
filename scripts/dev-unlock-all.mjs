@@ -67,7 +67,7 @@ if (!process.versions.electron) {
 const { default: Database } = await import('better-sqlite3');
 
 const SPECIES = [
-  'wizard', 'slime', 'robot', 'flying_eye', 'bat', 'mimic', 'evil_wizard',
+  'wizard', 'slime', 'flying_eye', 'bat', 'mimic', 'evil_wizard',
   'fire_worm', 'martial_hero', 'martial_hero_2', 'apprentice_wizard',
   'goblin', 'skeleton', 'mushroom', 'rat',
 ];
