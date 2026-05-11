@@ -50,8 +50,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Next up (ordered — top is next)
 
-1. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
-2. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
+1. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
 
 ---
 
@@ -75,6 +74,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `99a015b` — Telemetry on/off switch in Settings: start/stop OTLP receivers at runtime; persisted in `meta` (default ON); graceful close with 1s force-close backstop
 - `b441cd8` — CLI orchestrator (`scripts/codeling-cli.mjs`): one command runs telemetry + Stop hook installers across platforms; `bin` entry in package.json for future `npx codeling install`
 - `7449edc` — Shop silhouette previews: 48px south-rotation thumbnails next to species rows; unowned render as alpha-flat silhouettes via CSS filter
 - `601907f` — Animation picker always visible (shows locked pills with price/level tooltip for unowned anims); spin reveal swapped to a clean circular spinner
