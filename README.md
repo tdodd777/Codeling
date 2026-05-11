@@ -111,8 +111,6 @@ All 14 species ship bundled with the installer. No downloads, no extra setup. Pi
   </tr>
 </table>
 
-For sourcing, license vetting, and slicing details, see [`sprites.md`](sprites.md).
-
 ## How it works
 
 ```
@@ -170,6 +168,22 @@ The app itself uninstalls through the OS:
 - **macOS**: drag to Trash
 - **Linux**: `apt remove codeling` or `rpm -e codeling`
 
+## Roadmap
+
+### Known limitations
+
+- **Unsigned builds.** First-launch "publisher unknown" (Windows) / "unidentified developer" (macOS) prompt until paid code-signing certs land. Dismiss once and subsequent launches are silent.
+- **Stop-hook vs OTLP race.** With the Stop hook installed, OTLP `user_prompt` and the hook can race; very occasionally a turn gets counted twice. Fix shapes tracked in `DIRECTION.md` → Open questions.
+- **DELTA-temporality OTLP only.** Codeling expects DELTA temporality (which is what Claude Code emits today). If the source ever switches to CUMULATIVE, the aggregator warns and drops the data point.
+
+### Coming up
+
+- **First published release.** Cut a release via `npm run publish` (uploads to GitHub Releases) and flip `private: false` in `package.json` so `npx codeling install` resolves end-to-end. Currently the CLI downloads from a release that doesn't exist yet.
+- **Code signing.** Apple Developer ID + notarization for macOS; Authenticode for Windows. Placeholders are commented in `forge.config.ts`.
+- **Additional package channels.** Homebrew cask, Scoop manifest, Winget submission.
+- **More species.** Additional CC0 candidates archived under `assets/sources/luizmelo/` — drop them through `scripts/luizmelo-slice.py`.
+- **Polish.** Spin-reveal animation pass; 8-directional rendering on the panel; starter-selection silhouette reveal on first launch; animation-pricing tuning post-playtest.
+
 ## Development
 
 ```bash
@@ -212,23 +226,23 @@ proto/                       Vendored OTLP collector .proto files
 
 ## Contributing
 
-Contributions welcome. A few common paths in:
+Contributions welcome. Common paths:
 
-- **Add a sprite species**: the full recipe (asset layout, slicer, license vetting bar) is in [`sprites.md`](sprites.md). The bar for inclusion is rich animation: ≥6 frames per anim, ≥3 distinct animations.
-- **Tune the economy**: defaults in `src/main/economy.ts`. Open an issue or PR with the proposed delta and the reasoning.
-- **Distribution polish**: code signing, auto-update channels, and Linux packaging smoke tests are all in the open backlog.
+- **Add a species.** Drop a sprite folder under `assets/sprites/<species>/` matching the existing layout (`rotations/south.png` as the static fallback, `animations/<Name>/south/frame_NNN.png` for each animation — the folder name is matched against keywords: `idle`/`breath`, `run`, `walk`, `attack`). Add the key to the `Species` union and `SPECIES_CATALOG` in `src/shared/types.ts`; optionally tune the head-crop fraction in `TRAY_HEAD_FRACTION` (`src/main/index.ts`). Bar for inclusion: rich animation (≥6 frames per anim, ≥3 distinct animations). Acceptable licenses: **CC0**, **CC-BY** (with attribution in `assets/sources/<creator>/NOTICE.md`), **MIT**. Reject anything with **SA / NC / ND / GPL** clauses — copyleft / non-commercial restrictions are incompatible with this repo's MIT license. LuizMelo packs ship one PNG per animation as a horizontal strip; slice via `scripts/luizmelo-slice.py` (extend the `SPECIES` dict and re-run).
+- **Tune the economy.** Defaults in `src/main/economy.ts`. Open an issue or PR with the proposed delta and the reasoning.
+- **Distribution polish.** Code signing, packaging smoke tests, additional channels — see *Roadmap* above.
 
-For larger changes, open an issue first to talk through direction. The dated decision log in [`DIRECTION.md`](DIRECTION.md) captures the *why* behind current choices; [`roadmap.md`](roadmap.md) tracks what's next.
+For larger changes, open an issue first. The dated decision log in [`DIRECTION.md`](DIRECTION.md) captures the *why* behind current choices.
 
 ## Acknowledgments
 
-Codeling builds on the work of pixel artists who release under permissive licenses. Every sprite in the roster is either CC0 or commissioned:
+Codeling builds on the work of pixel artists who release under permissive licenses. Every sprite in the roster is either CC0 or generated from pixellab:
 
 - **[LuizMelo](https://luizmelo.itch.io/)**: 12 of 14 species (Flying Eye, Bat, Mimic, Evil Wizard, Fire Worm, Martial Hero, Martial Hero 2, Apprentice Wizard, Goblin, Skeleton, Mushroom, Rat). Carries the CC0-with-rich-animation niche on itch.io.
 - **[rvros](https://rvros.itch.io/pixel-art-animated-slime)**: the slime.
 - **[PixelLab](https://pixellab.ai/)**: the original wizard.
 
-Per-source license details and frame inventories live in [`sprites.md`](sprites.md) and per-source `NOTICE.md` files under `assets/sources/`.
+Per-source license details live in `NOTICE.md` files under `assets/sources/`.
 
 ## License
 
