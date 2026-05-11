@@ -50,7 +50,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Next up (ordered — top is next)
 
-1. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
+*(empty — all originally-queued items shipped this session. Pick something from **Later** below, or queue new work here.)*
 
 ---
 
@@ -74,6 +74,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `14dbabe` — Tray drift-poll: 5s backstop catches direct-DB species writes that bypass `pet:species-changed`; production paths unaffected
 - `99a015b` — Telemetry on/off switch in Settings: start/stop OTLP receivers at runtime; persisted in `meta` (default ON); graceful close with 1s force-close backstop
 - `b441cd8` — CLI orchestrator (`scripts/codeling-cli.mjs`): one command runs telemetry + Stop hook installers across platforms; `bin` entry in package.json for future `npx codeling install`
 - `7449edc` — Shop silhouette previews: 48px south-rotation thumbnails next to species rows; unowned render as alpha-flat silhouettes via CSS filter
