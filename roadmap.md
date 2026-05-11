@@ -50,12 +50,11 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Next up (ordered — top is next)
 
-1. **Spin reveal animation.** Current toast pops the result instantly. Add wheel-spin / scroll / glow → reveal sequence. Pure-renderer; `performSpin` already returns the result up-front, the animation just delays the visual reveal.
-2. **Sprite scanner alias-collision fix.** When two folders alias to the same key (Mimic's three "Idle" folders), last-write-wins silently. Proper fix: prefer the entry with the most frames when aliases collide. Currently worked around in `scripts/luizmelo-slice.py` by renaming source folders. *Open question in DIRECTION.md.*
-3. **Silhouette previews for unowned species.** Shop currently shows full-color art with a price tag. Alpha-flatten to black would make the collection feel more like a wallchart. Needs a render utility or pre-baked silhouette PNGs.
-4. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
-5. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
-6. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
+1. **Sprite scanner alias-collision fix.** When two folders alias to the same key (Mimic's three "Idle" folders), last-write-wins silently. Proper fix: prefer the entry with the most frames when aliases collide. Currently worked around in `scripts/luizmelo-slice.py` by renaming source folders. *Open question in DIRECTION.md.*
+2. **Silhouette previews for unowned species.** Shop currently shows full-color art with a price tag. Alpha-flatten to black would make the collection feel more like a wallchart. Needs a render utility or pre-baked silhouette PNGs.
+3. **Bundled `npx codeling install`.** Assembly + `bin` setup wrapping the existing pieces (`scripts/install-telemetry.{ps1,sh}`, `scripts/install-stop-hook.mjs`, auto-launch toggle) into one command. The north-star install per `DIRECTION.md`.
+4. **Telemetry on/off switch in Settings.** Receiver port lifecycle (start/stop without restarting the app). Spec out before building. *Deferred from M5.*
+5. **Tray icon refresh on species change — production-grade.** Add `pet:species-changed` listener that compares with the last-rendered species so swap-via-DB-edit (test paths, future save-import) also refreshes. *Open question in DIRECTION.md.*
 
 ---
 
@@ -76,6 +75,7 @@ Living forward-looking doc. Reflects the current build state, what's in flight, 
 
 ## Recently shipped
 
+- `95528e0` — Spin reveal animation: 900ms anticipation (tier cycle + pulsing label) before the result lands; skippable via click/Esc
 - `7b2e8f0` — PetSprite takes manifest as prop; eliminates duplicate getSprites fetches; Home resets manifest on species swap so stale frames don't render
 - `e297819` — Popout polish: tray click intercepted at source (no flicker); PetSprite renders only once manifest loaded (fix initial-blank bug)
 - `02f2d43` — Popout window: standalone resizable BrowserWindow, hides tray panel while active, bounds persisted in `meta`
