@@ -26,6 +26,16 @@ const TRAY_HEAD_FRACTION: Record<Species, number> = {
   wizard: 0.55,
   slime: 0.85,
   robot: 1.0,
+  // LuizMelo creatures — all single-direction, soft pixel art, placeholders to tune
+  // once each species is seen on a real tray icon at native size.
+  flying_eye: 0.9,         // mostly head (eye monster), head crop is the whole sprite
+  bat: 0.7,                // wings + body; keep enough body in frame to read "bat"
+  mimic: 0.65,             // chest with mouth on top — top crop catches the alive bits
+  evil_wizard: 0.5,        // humanoid, hat + face survives the tray crop
+  fire_worm: 0.8,          // worm with mostly body — head fraction is most of the sprite
+  martial_hero: 0.5,       // humanoid kung-fu fighter
+  martial_hero_2: 0.5,     // same
+  apprentice_wizard: 0.5,  // humanoid, pointy hat reads
 };
 
 if (!app.requestSingleInstanceLock()) {

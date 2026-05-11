@@ -1,4 +1,15 @@
-export type Species = 'wizard' | 'slime' | 'robot';
+export type Species =
+  | 'wizard'
+  | 'slime'
+  | 'robot'
+  | 'flying_eye'
+  | 'bat'
+  | 'mimic'
+  | 'evil_wizard'
+  | 'fire_worm'
+  | 'martial_hero'
+  | 'martial_hero_2'
+  | 'apprentice_wizard';
 
 export type Direction =
   | 'north'

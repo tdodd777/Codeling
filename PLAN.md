@@ -99,10 +99,11 @@ Goal: every visible UI element does something real. After M1, the app is a compl
 
 ## M2 — Multi-species + visual polish
 
-Code-only items shipped; the rest is gated on art landing in `assets/sprites/`.
+Code-only items shipped; species roster has expanded well beyond the original 3-species spec via the LuizMelo CC0 catalog (see `sprites.md`).
 
-- [ ] Slime/blob species sprites (PixelLab Character Creator export → `assets/sprites/slime/`) — **HUMAN.md**
-- [ ] Robot species sprites → `assets/sprites/robot/` — **HUMAN.md**
+- [x] Slime species (rvros CC0 — single-direction idle + run, `assets/sprites/slime/`)
+- [ ] Robot species → `assets/sprites/robot/` — David Harrington CC0 robot is the candidate, see `sprites.md`
+- [x] **Bonus** — 8 LuizMelo creatures shipped (flying_eye, bat, mimic, evil_wizard, fire_worm, martial_hero, martial_hero_2, apprentice_wizard) via `scripts/luizmelo-slice.py`. 4 more (goblin, skeleton, mushroom, rat) archived in `sources/luizmelo/`, slicer-ready.
 - [x] Per-species `TRAY_HEAD_FRACTION: Record<Species, number>` (`src/main/index.ts`): `wizard: 0.55`, `slime: 0.85`, `robot: 1.0`. `processForTray(img, species)` reads the fraction; slime/robot values are placeholders to tune once art lands.
 - [ ] First-launch starter randomizer (replace hardcoded `wizard` seed) — **blocked on slime + robot art**
 - [ ] Silhouette reveal animation on starter assignment — **blocked on starter randomizer**

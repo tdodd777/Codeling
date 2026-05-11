@@ -100,13 +100,20 @@ proto/                    # Vendored OTLP collector .proto files
 
 ## Adding a sprite
 
-Drop a PixelLab Character Creator export folder into `assets/sprites/<species>/` (e.g., `assets/sprites/wizard/`). The scanner reads PixelLab's native layout — no renaming needed. See the *Sprite asset convention* entry in `DIRECTION.md` for details on accepted directory shapes.
+Two supported source flavors:
+
+**PixelLab Character Creator exports.** Drop the unmodified export folder into `assets/sprites/<species>/`. The scanner reads PixelLab's native layout (rotations/ + animations/) — no renaming needed.
+
+**LuizMelo itch.io packs.** Drop the unzipped pack into `assets/sprites/`, extend the `SPECIES` dict in `scripts/luizmelo-slice.py`, then run `python scripts/luizmelo-slice.py`. The slicer converts horizontal sprite strips into the PixelLab-compatible layout and archives the raw source under `assets/sources/luizmelo/`.
+
+See [`sprites.md`](sprites.md) for the curated catalog of vetted open-source sprite candidates, license rules, and per-species frame inventory. See the *Sprite asset convention* and *Art pipeline* entries in `DIRECTION.md` for the canonical scanner behavior and pipeline decisions.
 
 ## Where things live
 
 - **Vision, dated decisions, deferred backlog, open questions**: `DIRECTION.md`
 - **Execution plan + per-milestone done/in-progress checklist**: `PLAN.md`
 - **Human-only tasks** (asset generation, distribution, real-machine validation, playtesting): `HUMAN.md`
+- **Sprite roster** (integrated species, license compatibility rules, scouting catalog, integration recipe): `sprites.md`
 - **SQLite database** (runtime): `%APPDATA%\Codeling\codeling.db` on Windows, `~/Library/Application Support/Codeling/codeling.db` on macOS
 - **Tunable game rules** (defaults): `src/main/economy.ts` (`ECONOMY_RULE_DEFAULTS`); live overrides live in the `meta` table and are editable via the Settings tab → Economy section
 

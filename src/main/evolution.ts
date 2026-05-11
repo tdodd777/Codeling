@@ -12,6 +12,16 @@ export const EVOLUTIONS: Record<Species, readonly number[]> = {
   wizard: [50_000, 200_000, 500_000],
   slime:  [50_000, 200_000, 500_000],
   robot:  [50_000, 200_000, 500_000],
+  // LuizMelo creatures share the same default curve until we have per-species
+  // pacing data or stage_<N>/ art to anchor against.
+  flying_eye:        [50_000, 200_000, 500_000],
+  bat:               [50_000, 200_000, 500_000],
+  mimic:             [50_000, 200_000, 500_000],
+  evil_wizard:       [50_000, 200_000, 500_000],
+  fire_worm:         [50_000, 200_000, 500_000],
+  martial_hero:      [50_000, 200_000, 500_000],
+  martial_hero_2:    [50_000, 200_000, 500_000],
+  apprentice_wizard: [50_000, 200_000, 500_000],
 };
 
 export function stageForOutputTokens(species: Species, cumulativeOutputTokens: number): number {
