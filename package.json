@@ -14,10 +14,10 @@
   "homepage": "https://github.com/tdodd777/Codeling",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tdodd777/Codeling.git"
+    "url": "git+https://github.com/tdodd777/Codeling.git"
   },
   "bin": {
-    "codeling": "./scripts/codeling-cli.mjs"
+    "codeling": "scripts/codeling-cli.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -32,7 +32,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "release": "electron-forge publish",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -191,7 +191,7 @@ npm start        # Forge dev: Vite HMR + hot main-process reload
 | `npm test` | Run vitest (pure-logic suites); `npm run test:watch` for watch mode |
 | `npm run package` | Forge package: unpacked binary |
 | `npm run make` | Forge make: full installers (Squirrel / DMG / DEB / RPM) in `out/make/` |
-| `GITHUB_TOKEN=… npm run publish` | Forge publish: uploads installers to GitHub Releases as a draft |
+| `GITHUB_TOKEN=… npm run release` | Forge publish: uploads installers to GitHub Releases as a draft |
 
 ### Project layout
 
