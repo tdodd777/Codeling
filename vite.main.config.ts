@@ -1,15 +1,21 @@
 import { defineConfig } from 'vite';
 import path from 'node:path';
 
-// Bundle pure-JS deps into main.js so they ship inside app.asar — Forge's
-// plugin-vite doesn't include node_modules by default, so anything left
-// external would crash with "Cannot find module 'X'" at runtime.
+// Externalized deps stay as runtime `require(...)` calls in main.js and are
+// loaded from node_modules at runtime. The `copyProductionDeps` afterCopy
+// hook in forge.config.ts copies the full production dep closure into the
+// packaged app's node_modules, so externalizing is safe for any dep listed
+// in package.json `dependencies`.
 //
-// Keep external:
-//   - electron     — provided by the Electron runtime itself
-//   - better-sqlite3 — native module (.node binary); can't be bundled.
-//     Handled by @electron-forge/plugin-auto-unpack-natives, which copies
-//     it into app.asar.unpacked/node_modules and adds an asar.unpack rule.
+// Must be external:
+//   - electron       — provided by the Electron runtime itself
+//   - better-sqlite3 — native module (.node binary); can't be bundled
+//   - protobufjs     — has a "browser" field that Rollup picks by default,
+//     swapping fs.readFileSync for XMLHttpRequest. Bundling crashes with
+//     "XMLHttpRequest is not defined" when loading .proto files at runtime.
+//   - @grpc/grpc-js, @grpc/proto-loader — do dynamic require()s for native
+//     bindings and proto files; bundling breaks the runtime fs lookups
+//     ("Cannot read properties of null (reading 'readFileSync')").
 export default defineConfig({
   resolve: {
     alias: {
@@ -18,7 +24,13 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['electron', 'better-sqlite3'],
+      external: [
+        'electron',
+        'better-sqlite3',
+        'protobufjs',
+        '@grpc/grpc-js',
+        '@grpc/proto-loader',
+      ],
       output: {
         entryFileNames: 'main.js',
       },
