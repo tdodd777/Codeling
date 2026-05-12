@@ -4,7 +4,71 @@ import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { PublisherGithub } from '@electron-forge/publisher-github';
+import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { VitePlugin } from '@electron-forge/plugin-vite';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+
+// plugin-vite intentionally drops node_modules from the build output (it
+// assumes the user bundles everything with Vite). That breaks native modules
+// like better-sqlite3, which can't be bundled — their .node binary needs to
+// land in the packaged app's node_modules on disk.
+//
+// This hook copies the production dep closure into the build path AFTER
+// plugin-vite has done its cleanup, and restores the `dependencies` field
+// in the build's package.json so AutoUnpackNativesPlugin can detect them.
+// The existing `asar.unpack: '**/*.node'` rule then ensures .node binaries
+// land in app.asar.unpacked at install time.
+async function copyProductionDeps(buildPath: string): Promise<void> {
+  const projectRoot = __dirname;
+  const projectPkg = JSON.parse(
+    await fs.readFile(path.join(projectRoot, 'package.json'), 'utf8'),
+  );
+  const seedDeps: string[] = Object.keys(projectPkg.dependencies ?? {});
+
+  // BFS the production dep closure (deps + their transitive deps).
+  const visited = new Set<string>();
+  const queue = [...seedDeps];
+  while (queue.length) {
+    const name = queue.shift()!;
+    if (visited.has(name)) continue;
+    visited.add(name);
+    try {
+      const depPkg = JSON.parse(
+        await fs.readFile(
+          path.join(projectRoot, 'node_modules', name, 'package.json'),
+          'utf8',
+        ),
+      );
+      for (const t of Object.keys(depPkg.dependencies ?? {})) {
+        if (!visited.has(t)) queue.push(t);
+      }
+      for (const t of Object.keys(depPkg.optionalDependencies ?? {})) {
+        if (!visited.has(t)) queue.push(t);
+      }
+    } catch {
+      // Missing dep or unreadable package.json — skip silently.
+    }
+  }
+
+  await fs.mkdir(path.join(buildPath, 'node_modules'), { recursive: true });
+  for (const name of visited) {
+    const src = path.join(projectRoot, 'node_modules', name);
+    const dst = path.join(buildPath, 'node_modules', name);
+    try {
+      await fs.cp(src, dst, { recursive: true });
+    } catch {
+      // Missing dep on disk — skip.
+    }
+  }
+
+  // Restore the dependencies field so AutoUnpackNativesPlugin (which reads
+  // buildPath/package.json) sees what to scan for native bindings.
+  const buildPkgPath = path.join(buildPath, 'package.json');
+  const buildPkg = JSON.parse(await fs.readFile(buildPkgPath, 'utf8'));
+  buildPkg.dependencies = projectPkg.dependencies ?? {};
+  await fs.writeFile(buildPkgPath, JSON.stringify(buildPkg, null, 2));
+}
 
 // Code signing & notarization are stubbed below. Both require paid certs:
 //   - macOS: Apple Developer ID (~$99/yr) + an app-specific password for
@@ -25,6 +89,13 @@ const config: ForgeConfig = {
       unpack: '**/*.node',
     },
     extraResource: ['./assets', './proto'],
+    afterCopy: [
+      (buildPath, _electronVersion, _platform, _arch, callback) => {
+        copyProductionDeps(buildPath)
+          .then(() => callback())
+          .catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err))));
+      },
+    ],
     // TODO: paid cert — uncomment once Apple Developer ID is provisioned.
     // osxSign: {
     //   identity: 'Developer ID Application: <Your Name> (<TEAMID>)',
@@ -63,6 +134,12 @@ const config: ForgeConfig = {
     }),
   ],
   plugins: [
+    // Detects native modules in node_modules (better-sqlite3 today) and
+    // unpacks them from app.asar at install time so the .node binary is
+    // loadable at runtime. Without this, requires for native deps fail with
+    // "Cannot find module" since Forge's plugin-vite ships only the Vite
+    // build output, not node_modules.
+    new AutoUnpackNativesPlugin({}),
     new VitePlugin({
       build: [
         {
