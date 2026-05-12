@@ -6,6 +6,7 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { PublisherGithub } from '@electron-forge/publisher-github';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { VitePlugin } from '@electron-forge/plugin-vite';
+import { rebuild } from '@electron/rebuild';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
@@ -98,6 +99,15 @@ const config: ForgeConfig = {
     afterCopy: [
       (buildPath, _electronVersion, _platform, _arch, callback) => {
         copyProductionDeps(buildPath)
+          .then(() => callback())
+          .catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err))));
+      },
+      // Rebuild native modules (e.g. better-sqlite3) against the Electron ABI.
+      // Must run after copyProductionDeps so the modules exist in buildPath.
+      // copyProductionDeps copies from project node_modules which are compiled
+      // against the system Node; this step recompiles them for Electron's ABI.
+      (buildPath, electronVersion, platform, arch, callback) => {
+        rebuild({ buildPath, electronVersion, arch, platform })
           .then(() => callback())
           .catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err))));
       },
