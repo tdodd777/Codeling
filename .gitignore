@@ -10,5 +10,7 @@ Thumbs.db
 *.db
 *.db-journal
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .claude/
+.npm-main-backup

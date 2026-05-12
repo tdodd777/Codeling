@@ -7,6 +7,7 @@ import { PublisherGithub } from '@electron-forge/publisher-github';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import path from 'node:path';
+import os from 'node:os';
 import fs from 'node:fs/promises';
 
 // plugin-vite intentionally drops node_modules from the build output (it
@@ -82,7 +83,12 @@ async function copyProductionDeps(buildPath: string): Promise<void> {
 // Unsigned builds work today — users see a "publisher unknown" warning on
 // first launch but can dismiss it. Document this in the README.
 
+// Build output goes outside the workspace so VS Code's file watcher can't grab
+// a handle on app.asar between runs. (We're literally running inside VS Code,
+// so we can't restart it to drop handles.) Override with FORGE_OUT_DIR if you
+// want a different location for a one-off build.
 const config: ForgeConfig = {
+  outDir: process.env.FORGE_OUT_DIR ?? path.resolve(os.homedir(), '.codeling-build'),
   packagerConfig: {
     name: 'Codeling',
     asar: {

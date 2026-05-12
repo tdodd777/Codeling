@@ -33,6 +33,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "release": "electron-forge publish",
+    "prepublishOnly": "node ./scripts/npm-main-swap.mjs --swap",
+    "postpublish": "node ./scripts/npm-main-swap.mjs --restore",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
