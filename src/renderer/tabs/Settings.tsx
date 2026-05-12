@@ -319,9 +319,11 @@ export function Settings() {
           <div className="setting-row__main">
             <div className="setting-row__label">Telemetry receivers</div>
             <div className="setting-row__hint">
-              {telemetry?.enabled
-                ? 'Listening — Claude Code activity feeds XP and bits'
-                : 'Paused — no XP or bits will be earned until re-enabled'}
+              {!telemetry?.enabled
+                ? 'Paused — no XP or bits will be earned until re-enabled'
+                : telemetry.running
+                  ? 'Listening — Claude Code activity feeds XP and bits'
+                  : 'Failed to start — check app logs and retry the toggle'}
             </div>
           </div>
           <div className="setting-row__action">
