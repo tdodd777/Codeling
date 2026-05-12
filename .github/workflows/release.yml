@@ -25,6 +25,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Rebuild native modules against Electron's Node ABI
+        run: node ./node_modules/@electron/rebuild/lib/cli.js --force
+
       - name: Build and publish to GitHub Releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
